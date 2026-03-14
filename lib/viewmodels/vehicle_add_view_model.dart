@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:oto_galeri/services/vehicle_service.dart';
 import 'package:oto_galeri/core/utils/logger.dart';
 
@@ -10,6 +11,9 @@ class VehicleAddViewModel extends ChangeNotifier {
   bool isLoading = false;
   String? errorMessage;
   bool isSaved = false;
+
+  // Seçilen görsel yerel yolu (API hazır olduğunda upload edilecek)
+  String? selectedImagePath;
 
   // ─── FORM FIELDS ──────────────────────────────────────
 
@@ -26,6 +30,9 @@ class VehicleAddViewModel extends ChangeNotifier {
   double? purchasePrice;
   DateTime? purchaseDate;
   String? paymentMethod;
+
+  // DEMO: Vade farkı hesabı – backend hazır olduğunda servis/API katmanına taşınacak
+  double? financeChargeAmount;
 
   // Sigorta Bilgileri
   DateTime? insuranceDate;
@@ -45,6 +52,10 @@ class VehicleAddViewModel extends ChangeNotifier {
   final TextEditingController plateController = TextEditingController();
   final TextEditingController purchasePriceController = TextEditingController();
 
+  // DEMO: Vade farkı hesabı kontrolcüleri – API hazır olduğunda servis/API katmanına taşınacak
+  final TextEditingController interestRateController = TextEditingController();
+  final TextEditingController installmentCountController = TextEditingController();
+
   // ─── SETTERS (Dropdown / DatePicker için) ─────────────
   void setFuelType(String? value) {
     fuelType = value;
@@ -53,6 +64,13 @@ class VehicleAddViewModel extends ChangeNotifier {
 
   void setPaymentMethod(String? value) {
     paymentMethod = value;
+    if (value == 'Nakit') {
+      interestRateController.clear();
+      installmentCountController.clear();
+      financeChargeAmount = null;
+    } else {
+      calculateFinanceCharge();
+    }
     notifyListeners();
   }
 
@@ -73,6 +91,55 @@ class VehicleAddViewModel extends ChangeNotifier {
 
   void setInspectionDate(DateTime? date) {
     inspectionDate = date;
+    notifyListeners();
+  }
+
+  // DEMO: Lokal vade farkı hesabı – backend hazır olduğunda bu hesap servis/API tarafına taşınacak
+  void calculateFinanceCharge() {
+    final price = double.tryParse(
+      purchasePriceController.text.trim().replaceAll('.', '').replaceAll(',', '.'),
+    );
+    final rate = double.tryParse(
+      interestRateController.text.trim().replaceAll(',', '.'),
+    );
+
+    if (price == null || rate == null || paymentMethod == null || paymentMethod == 'Nakit') {
+      financeChargeAmount = null;
+      notifyListeners();
+      return;
+    }
+
+    if (paymentMethod == 'Çek') {
+      financeChargeAmount = price * (rate / 100);
+    } else if (paymentMethod == 'Vadeli') {
+      final months = int.tryParse(installmentCountController.text.trim());
+      financeChargeAmount = (months != null && months > 0)
+          ? price * (rate / 100) * months
+          : null;
+    } else {
+      financeChargeAmount = null;
+    }
+    notifyListeners();
+  }
+
+  // ─── GÖRSEL SEÇ ─────────────────────────────────────────
+  Future<void> pickImage() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.image,
+        allowMultiple: false,
+      );
+      if (result != null && result.files.single.path != null) {
+        selectedImagePath = result.files.single.path;
+        notifyListeners();
+      }
+    } catch (e) {
+      AppLogger.error('Görsel seçilemedi', error: e);
+    }
+  }
+
+  void removeImage() {
+    selectedImagePath = null;
     notifyListeners();
   }
 
@@ -99,6 +166,18 @@ class VehicleAddViewModel extends ChangeNotifier {
         'insurance_date': insuranceDate?.toIso8601String().split('T').first,
         'kasko_date': kaskoDate?.toIso8601String().split('T').first,
         'inspection_date': inspectionDate?.toIso8601String().split('T').first,
+        // DEMO: Vade farkı hesabı – API hazır olduğunda backend alanlarıyla eşleşecek
+        if (financeChargeAmount != null) ...{
+          'interest_rate': double.tryParse(
+            interestRateController.text.trim().replaceAll(',', '.'),
+          ),
+          'installment_count': paymentMethod == 'Vadeli'
+              ? int.tryParse(installmentCountController.text.trim())
+              : null,
+          'finance_charge_amount': financeChargeAmount,
+        },
+        // TODO: API hazır olduğunda image upload entegre edilecek
+        // 'image_path': selectedImagePath,
       };
 
       final result = await _service.addVehicle(data);
@@ -141,6 +220,11 @@ class VehicleAddViewModel extends ChangeNotifier {
     insuranceDate = null;
     kaskoDate = null;
     inspectionDate = null;
+    selectedImagePath = null;
+    // DEMO: Vade farkı hesabı – API hazır olduğunda temizlenecek
+    interestRateController.clear();
+    installmentCountController.clear();
+    financeChargeAmount = null;
     isLoading = false;
     errorMessage = null;
     isSaved = false;
@@ -156,6 +240,8 @@ class VehicleAddViewModel extends ChangeNotifier {
     colorController.dispose();
     plateController.dispose();
     purchasePriceController.dispose();
+    interestRateController.dispose();
+    installmentCountController.dispose();
     super.dispose();
   }
 }

@@ -122,6 +122,19 @@ class _VehicleDetailViewState extends State<VehicleDetailView> {
                   label: 'Ödeme Yöntemi',
                   value: vehicle.paymentMethod!,
                 ),
+              // DEMO: Vade farkı bilgisi – API hazır olduğunda backend'den gelecek
+              if (vehicle.interestRate != null)
+                _FieldRow(
+                  label: 'Faiz / Vade Farkı',
+                  value: '${vehicle.interestRate}%${vehicle.installmentCount != null ? ' · ${vehicle.installmentCount} ay' : ''}',
+                ),
+              if (vehicle.financeChargeLabel != null && vehicle.financeChargeAmount != null)
+                _FieldRow(
+                  label: vehicle.financeChargeLabel!,
+                  value: currencyFormat.format(vehicle.financeChargeAmount!.abs()),
+                  valueColor: (vehicle.financeChargeAmount! >= 0) ? AppTheme.error : AppTheme.statusStokta,
+                  bold: true,
+                ),
               if (vehicle.totalExpense != null)
                 _FieldRow(
                   label: 'Toplam Masraf',

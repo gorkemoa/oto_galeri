@@ -25,6 +25,10 @@ class VehicleModel {
   final String? customerPhone; // Müşteri telefonu
   final double? customerBalance; // Müşteri bakiyesi
   final String? imageUrl; // Araç görseli URL
+  // DEMO: Vade farkı hesabı – API hazır olduğunda backend alanlarıyla eşleşecek
+  final double? interestRate;        // Faiz / vade farkı oranı (%)
+  final int? installmentCount;       // Vade süresi (ay)
+  final double? financeChargeAmount; // Hesaplanan vade farkı tutarı (+ masraf, – kazanç)
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -52,6 +56,9 @@ class VehicleModel {
     this.customerPhone,
     this.customerBalance,
     this.imageUrl,
+    this.interestRate,
+    this.installmentCount,
+    this.financeChargeAmount,
     this.createdAt,
     this.updatedAt,
   });
@@ -64,6 +71,12 @@ class VehicleModel {
 
   /// Satıldı mı?
   bool get isSold => status == 'SATILDI';
+
+  /// Vade farkı etiket (demo)
+  String? get financeChargeLabel {
+    if (financeChargeAmount == null || financeChargeAmount == 0) return null;
+    return (financeChargeAmount! > 0) ? 'Vadeden Doğan Masraf' : 'Vadeden Doğan Kazanç';
+  }
 
   /// Net kar/zarar hesabı
   double? get profitLoss {
@@ -96,6 +109,9 @@ class VehicleModel {
       customerPhone: json['customer_phone'] as String?,
       customerBalance: (json['customer_balance'] as num?)?.toDouble(),
       imageUrl: json['image_url'] as String?,
+      interestRate: (json['interest_rate'] as num?)?.toDouble(),
+      installmentCount: json['installment_count'] as int?,
+      financeChargeAmount: (json['finance_charge_amount'] as num?)?.toDouble(),
       createdAt: json['created_at'] != null ? DateTime.tryParse(json['created_at']) : null,
       updatedAt: json['updated_at'] != null ? DateTime.tryParse(json['updated_at']) : null,
     );
@@ -126,6 +142,9 @@ class VehicleModel {
       'customer_phone': customerPhone,
       'customer_balance': customerBalance,
       'image_url': imageUrl,
+      'interest_rate': interestRate,
+      'installment_count': installmentCount,
+      'finance_charge_amount': financeChargeAmount,
       'created_at': createdAt?.toIso8601String(),
       'updated_at': updatedAt?.toIso8601String(),
     };

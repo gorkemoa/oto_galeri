@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:oto_galeri/app/app_theme.dart';
 import 'package:oto_galeri/core/responsive/size_config.dart';
@@ -40,6 +41,15 @@ class OtoGaleriApp extends StatelessWidget {
         title: 'Oto Galeri',
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
+        localizationsDelegates: const [
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: const [
+          Locale('tr', 'TR'),
+          Locale('en', 'US'),
+        ],
         // Font Scaling Protection - zorunlu
         builder: (context, child) {
           // SizeConfig init
