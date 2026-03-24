@@ -16,6 +16,7 @@ import 'package:oto_galeri/viewmodels/expenses_view_model.dart';
 import 'package:oto_galeri/viewmodels/reports_view_model.dart';
 import 'package:oto_galeri/viewmodels/profile_view_model.dart';
 import 'package:oto_galeri/viewmodels/vehicle_add_view_model.dart';
+import 'package:oto_galeri/viewmodels/expense_add_view_model.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -33,6 +34,7 @@ class OtoGaleriApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => DashboardViewModel()),
         ChangeNotifierProvider(create: (_) => VehiclesViewModel()),
         ChangeNotifierProvider(create: (_) => VehicleAddViewModel()),
+        ChangeNotifierProvider(create: (_) => ExpenseAddViewModel()),
         ChangeNotifierProvider(create: (_) => ExpensesViewModel()),
         ChangeNotifierProvider(create: (_) => ReportsViewModel()),
         ChangeNotifierProvider(create: (_) => ProfileViewModel()),

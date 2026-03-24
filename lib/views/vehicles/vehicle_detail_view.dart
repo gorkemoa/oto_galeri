@@ -5,8 +5,10 @@ import 'package:oto_galeri/core/responsive/size_tokens.dart';
 import 'package:oto_galeri/core/utils/vehicle_image_helper.dart';
 import 'package:oto_galeri/models/expense_model.dart';
 import 'package:oto_galeri/models/vehicle_model.dart';
+import 'package:oto_galeri/models/vehicle_usage_model.dart';
 import 'package:oto_galeri/viewmodels/vehicle_detail_view_model.dart';
 import 'package:oto_galeri/views/vehicles/widgets/add_expense_bottom_sheet.dart';
+import 'package:oto_galeri/views/vehicles/widgets/add_usage_bottom_sheet.dart';
 import 'package:provider/provider.dart';
 
 /// VehicleDetailView - Araç Detay Ekranı
@@ -100,6 +102,10 @@ class _VehicleDetailViewState extends State<VehicleDetailView> {
 
           // ─── ARAÇ ÖZELLİKLERİ ───────────────────────
           _buildSpecsGrid(context, vehicle),
+          SizedBox(height: SizeTokens.spacingSm),
+
+          // ─── KULLANIM TAKİBİ ─────────────────────────
+          _buildUsageSection(context, viewModel),
           SizedBox(height: SizeTokens.spacingSm),
 
           // ─── ALIŞ BİLGİLERİ ─────────────────────────
@@ -615,8 +621,158 @@ class _VehicleDetailViewState extends State<VehicleDetailView> {
     );
   }
 
-  Widget _buildError(BuildContext context, VehicleDetailViewModel viewModel) {
-    return Padding(
+  // ─── KULLANIM TAKİBİ BÖLÜMÜ ──────────────────────────
+  Widget _buildUsageSection(
+    BuildContext context,
+    VehicleDetailViewModel viewModel,
+  ) {
+    final records = viewModel.usageRecords;
+    final latestKm = viewModel.latestKm;
+    final kmFormat = NumberFormat('#,###', 'tr_TR');
+    final currencyFormat =
+        NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
+
+    return Container(
+      color: AppTheme.surface,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Bölüm başlığı ──────────────────────────────────────────
+          Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: SizeTokens.spacingLg,
+              vertical: SizeTokens.spacingMd,
+            ),
+            child: Row(
+              children: [
+                Text(
+                  'Kullanım Takibi',
+                  style: Theme.of(context).textTheme.titleSmall,
+                ),
+                SizedBox(width: SizeTokens.spacingSm),
+                if (latestKm != null)
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: SizeTokens.spacingSm,
+                      vertical: SizeTokens.spacingXxs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primary.withValues(alpha: 0.08),
+                      borderRadius:
+                          BorderRadius.circular(SizeTokens.radiusSm),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.speed_outlined,
+                            size: SizeTokens.iconXs,
+                            color: AppTheme.primary),
+                        SizedBox(width: SizeTokens.spacingXxs),
+                        Text(
+                          '${kmFormat.format(latestKm)} KM',
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelSmall
+                              ?.copyWith(
+                                color: AppTheme.primary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                const Spacer(),
+                // Kullanım Ekle butonu
+                GestureDetector(
+                  onTap: () => showAddUsageBottomSheet(context),
+                  child: Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: SizeTokens.spacingSm,
+                      vertical: SizeTokens.spacingXxs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primary,
+                      borderRadius:
+                          BorderRadius.circular(SizeTokens.radiusSm),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.add,
+                            size: SizeTokens.iconXs,
+                            color: AppTheme.textOnPrimary),
+                        SizedBox(width: SizeTokens.spacingXxs),
+                        Text(
+                          'Kayıt Ekle',
+                          style: Theme.of(context)
+                              .textTheme
+                              .labelSmall
+                              ?.copyWith(
+                                color: AppTheme.textOnPrimary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1, color: AppTheme.border),
+
+          // ── Boş durum ──────────────────────────────────────────────
+          if (records.isEmpty)
+            Padding(
+              padding: EdgeInsets.all(SizeTokens.spacingXxl),
+              child: Center(
+                child: Column(
+                  children: [
+                    Icon(Icons.route_outlined,
+                        size: SizeTokens.spacing5xl,
+                        color: AppTheme.textTertiary),
+                    SizedBox(height: SizeTokens.spacingMd),
+                    Text(
+                      'Henüz kullanım kaydı yok',
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(color: AppTheme.textTertiary),
+                    ),
+                    SizedBox(height: SizeTokens.spacingXs),
+                    Text(
+                      'Personel kullanımı, KM ve giderleri buradan takip edin',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context)
+                          .textTheme
+                          .bodySmall
+                          ?.copyWith(
+                              color: AppTheme.textTertiary,
+                              fontSize: SizeTokens.fontXxs),
+                    ),
+                  ],
+                ),
+              ),
+            )
+          else
+            ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: records.length,
+              separatorBuilder: (_, __) =>
+                  const Divider(height: 1, color: AppTheme.divider),
+              itemBuilder: (_, i) => _UsageRow(
+                record: records[i],
+                kmFormat: kmFormat,
+                currencyFormat: currencyFormat,
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildError(BuildContext context, VehicleDetailViewModel viewModel) {    return Padding(
       padding: EdgeInsets.all(SizeTokens.spacing5xl),
       child: Column(
         children: [
@@ -892,6 +1048,156 @@ class _ExpenseRow extends StatelessWidget {
                 ),
             ],
           ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Kullanım kaydı satırı ─────────────────────────────────────────────────
+
+class _UsageRow extends StatelessWidget {
+  final VehicleUsageModel record;
+  final NumberFormat kmFormat;
+  final NumberFormat currencyFormat;
+
+  static const Map<String, IconData> _expenseIcons = {
+    'HGS / Otoyol': Icons.toll_outlined,
+    'Trafik Cezası': Icons.gavel_outlined,
+  };
+
+  const _UsageRow({
+    required this.record,
+    required this.kmFormat,
+    required this.currencyFormat,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final dateStr = DateFormat('dd MMM yyyy', 'tr_TR').format(record.date);
+
+    return Padding(
+      padding: EdgeInsets.symmetric(
+        horizontal: SizeTokens.spacingLg,
+        vertical: SizeTokens.spacingMd,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // ── Üst satır: tarih + personel ───────────────────────────
+          Row(
+            children: [
+              Icon(Icons.calendar_today_outlined,
+                  size: SizeTokens.iconXs, color: AppTheme.textTertiary),
+              SizedBox(width: SizeTokens.spacingXxs),
+              Text(
+                dateStr,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: AppTheme.textSecondary,
+                    ),
+              ),
+              const Spacer(),
+              Icon(Icons.person_outline,
+                  size: SizeTokens.iconXs, color: AppTheme.textTertiary),
+              SizedBox(width: SizeTokens.spacingXxs),
+              Text(
+                record.staffName,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: AppTheme.textPrimary,
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+            ],
+          ),
+          // ── KM bilgisi ─────────────────────────────────────────────
+          if (record.startKm != null || record.endKm != null) ...[
+            SizedBox(height: SizeTokens.spacingXs),
+            Row(
+              children: [
+                Icon(Icons.speed_outlined,
+                    size: SizeTokens.iconXs, color: AppTheme.textSecondary),
+                SizedBox(width: SizeTokens.spacingXxs),
+                if (record.startKm != null && record.endKm != null)
+                  Text(
+                    '${kmFormat.format(record.startKm)} → ${kmFormat.format(record.endKm)} KM',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppTheme.textSecondary,
+                        ),
+                  )
+                else if (record.endKm != null)
+                  Text(
+                    'Sayaç: ${kmFormat.format(record.endKm)} KM',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppTheme.textSecondary,
+                        ),
+                  ),
+                if (record.usedKm != null) ...[
+                  SizedBox(width: SizeTokens.spacingXs),
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      horizontal: SizeTokens.spacingXs,
+                      vertical: SizeTokens.spacingXxs,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppTheme.accent.withValues(alpha: 0.08),
+                      borderRadius:
+                          BorderRadius.circular(SizeTokens.radiusSm),
+                    ),
+                    child: Text(
+                      '+${kmFormat.format(record.usedKm)} KM',
+                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                            color: AppTheme.accent,
+                            fontWeight: FontWeight.w700,
+                          ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ],
+          // ── Gider ──────────────────────────────────────────────────
+          if (record.hasExpense) ...[
+            SizedBox(height: SizeTokens.spacingXs),
+            Row(
+              children: [
+                Icon(
+                  _expenseIcons[record.expenseType] ?? Icons.receipt_outlined,
+                  size: SizeTokens.iconXs,
+                  color: AppTheme.warning,
+                ),
+                SizedBox(width: SizeTokens.spacingXxs),
+                Text(
+                  record.expenseType!,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: AppTheme.warning,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                const Spacer(),
+                Text(
+                  currencyFormat.format(record.expenseAmount!),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                        color: AppTheme.error,
+                        fontWeight: FontWeight.w700,
+                      ),
+                ),
+              ],
+            ),
+          ],
+          // ── Açıklama ───────────────────────────────────────────────
+          if (record.description != null &&
+              record.description!.isNotEmpty) ...[
+            SizedBox(height: SizeTokens.spacingXxs),
+            Text(
+              record.description!,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontSize: SizeTokens.fontXxs,
+                    color: AppTheme.textTertiary,
+                  ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ],
         ],
       ),
     );

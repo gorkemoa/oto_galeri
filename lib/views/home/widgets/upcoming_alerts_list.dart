@@ -80,10 +80,62 @@ class _AlertRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(
-            isUrgent ? Icons.warning_amber_rounded : Icons.schedule_outlined,
-            color: alertColor,
-            size: SizeTokens.iconSm,
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: SizeTokens.avatarMd,
+                height: SizeTokens.avatarMd,
+                decoration: BoxDecoration(
+                  color: AppTheme.accent.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(SizeTokens.radiusSm),
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(SizeTokens.radiusSm),
+                  child: alert.imageUrl != null && alert.imageUrl!.isNotEmpty
+                      ? (alert.imageUrl!.startsWith('http')
+                          ? Image.network(
+                              alert.imageUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => Icon(
+                                Icons.directions_car,
+                                color: AppTheme.accent,
+                                size: SizeTokens.iconSm,
+                              ),
+                            )
+                          : Image.asset(
+                              alert.imageUrl!,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) => Icon(
+                                Icons.directions_car,
+                                color: AppTheme.accent,
+                                size: SizeTokens.iconSm,
+                              ),
+                            ))
+                      : Icon(
+                          Icons.directions_car,
+                          color: AppTheme.accent,
+                          size: SizeTokens.iconSm,
+                        ),
+                ),
+              ),
+              Positioned(
+                right: -4,
+                top: -4,
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: BoxDecoration(
+                    color: AppTheme.surface,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    isUrgent ? Icons.warning_amber_rounded : Icons.schedule_outlined,
+                    color: alertColor,
+                    size: 14,
+                  ),
+                ),
+              ),
+            ],
           ),
           SizedBox(width: SizeTokens.spacingMd),
           Expanded(

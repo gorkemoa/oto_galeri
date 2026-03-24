@@ -28,72 +28,80 @@ class _ReportsViewState extends State<ReportsView> {
 
     return Scaffold(
       backgroundColor: AppTheme.background,
-      body: SafeArea(
-        child: viewModel.isLoading
-            ? const Center(child: CircularProgressIndicator(color: AppTheme.accent))
-            : viewModel.errorMessage != null
-                ? _buildError(viewModel)
-                : RefreshIndicator(
-                    color: AppTheme.accent,
-                    onRefresh: viewModel.refresh,
-                    child: SingleChildScrollView(
-                      physics: const AlwaysScrollableScrollPhysics(),
-                      padding: EdgeInsets.all(SizeTokens.spacingLg),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Raporlar',
-                            style: Theme.of(context).textTheme.headlineSmall,
-                          ),
-                          SizedBox(height: SizeTokens.spacingXxl),
+      appBar: AppBar(
+        centerTitle: true,
+        title: const Text(
+          'Raporlar',
+          style: TextStyle(
+            color: AppTheme.textOnPrimary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        backgroundColor: AppTheme.primary,
+        foregroundColor: AppTheme.textOnPrimary,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+      ),
+      body: viewModel.isLoading
+          ? const Center(child: CircularProgressIndicator(color: AppTheme.accent))
+          : viewModel.errorMessage != null
+              ? _buildError(viewModel)
+              : RefreshIndicator(
+                  color: AppTheme.accent,
+                  onRefresh: viewModel.refresh,
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: EdgeInsets.symmetric(horizontal: SizeTokens.spacingLg),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(height: SizeTokens.spacingXxl),
 
-                          // ─── AYLIK KAR GRAFİĞİ ───────────────
-                          _ReportCard(
-                            title: 'Aylık Kar',
-                            icon: Icons.trending_up,
-                            child: _buildMonthlyProfitChart(viewModel),
-                          ),
-                          SizedBox(height: SizeTokens.spacingLg),
+                        // ─── AYLIK KAR GRAFİĞİ ───────────────
+                        _ReportCard(
+                          title: 'Aylık Kar',
+                          icon: Icons.trending_up,
+                          child: _buildMonthlyProfitChart(viewModel),
+                        ),
+                        SizedBox(height: SizeTokens.spacingLg),
 
-                          // ─── GİDER DAĞILIMI ──────────────────
-                          _ReportCard(
-                            title: 'Gider Dağılımı',
-                            icon: Icons.pie_chart_outline,
-                            child: _buildExpenseDistribution(viewModel),
-                          ),
-                          SizedBox(height: SizeTokens.spacingLg),
+                        // ─── GİDER DAĞILIMI ──────────────────
+                        _ReportCard(
+                          title: 'Gider Dağılımı',
+                          icon: Icons.pie_chart_outline,
+                          child: _buildExpenseDistribution(viewModel),
+                        ),
+                        SizedBox(height: SizeTokens.spacingLg),
 
-                          // ─── EN KARLI ARAÇLAR ─────────────────
-                          _ReportCard(
-                            title: 'En Karlı Araçlar',
-                            icon: Icons.emoji_events_outlined,
-                            child: _buildRankingList(
-                              viewModel.mostProfitableData,
-                              'vehicle',
-                              'profit',
-                              AppTheme.success,
-                            ),
+                        // ─── EN KARLI ARAÇLAR ─────────────────
+                        _ReportCard(
+                          title: 'En Karlı Araçlar',
+                          icon: Icons.emoji_events_outlined,
+                          child: _buildRankingList(
+                            viewModel.mostProfitableData,
+                            'vehicle',
+                            'profit',
+                            AppTheme.success,
                           ),
-                          SizedBox(height: SizeTokens.spacingLg),
+                        ),
+                        SizedBox(height: SizeTokens.spacingLg),
 
-                          // ─── EN ÇOK MASRAF YAPILAN ────────────
-                          _ReportCard(
-                            title: 'En Çok Masraf Yapılan',
-                            icon: Icons.money_off_outlined,
-                            child: _buildRankingList(
-                              viewModel.mostExpenseData,
-                              'vehicle',
-                              'expense',
-                              AppTheme.error,
-                            ),
+                        // ─── EN ÇOK MASRAF YAPILAN ────────────
+                        _ReportCard(
+                          title: 'En Çok Masraf Yapılan',
+                          icon: Icons.money_off_outlined,
+                          child: _buildRankingList(
+                            viewModel.mostExpenseData,
+                            'vehicle',
+                            'expense',
+                            AppTheme.error,
                           ),
-                          SizedBox(height: SizeTokens.spacingLg),
-                        ],
-                      ),
+                        ),
+                        SizedBox(height: SizeTokens.spacingLg),
+                      ],
                     ),
                   ),
-      ),
+                ),
     );
   }
 

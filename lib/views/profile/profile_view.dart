@@ -27,83 +27,91 @@ class _ProfileViewState extends State<ProfileView> {
 
     return Scaffold(
       backgroundColor: AppTheme.background,
-      body: SafeArea(
-        child: viewModel.isLoading
-            ? const Center(child: CircularProgressIndicator(color: AppTheme.accent))
-            : SingleChildScrollView(
-                padding: EdgeInsets.all(SizeTokens.spacingLg),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Profil',
-                      style: Theme.of(context).textTheme.headlineSmall,
-                    ),
-                    SizedBox(height: SizeTokens.spacingXxl),
-
-                    // ─── KULLANICI KARTI ──────────────────
-                    _buildUserCard(viewModel),
-                    SizedBox(height: SizeTokens.spacingXxl),
-
-                    // ─── AYARLAR LİSTESİ ─────────────────
-                    _buildSection('Galeri Bilgileri', [
-                      _SettingsItem(
-                        icon: Icons.store_outlined,
-                        title: 'Galeri Adı',
-                        subtitle: viewModel.galleryName ?? '-',
-                      ),
-                      _SettingsItem(
-                        icon: Icons.phone_outlined,
-                        title: 'Telefon',
-                        subtitle: viewModel.phone ?? '-',
-                      ),
-                      _SettingsItem(
-                        icon: Icons.location_on_outlined,
-                        title: 'Adres',
-                        subtitle: viewModel.address ?? '-',
-                      ),
-                    ]),
-                    SizedBox(height: SizeTokens.spacingLg),
-
-                    _buildSection('Yönetim', [
-                      _SettingsItem(
-                        icon: Icons.people_outline,
-                        title: 'Kullanıcı Yönetimi',
-                        trailing: Icon(
-                          Icons.chevron_right,
-                          size: SizeTokens.iconSm,
-                          color: AppTheme.textTertiary,
-                        ),
-                        onTap: () {
-                          // TODO: Kullanıcı yönetimi sayfasına navigate
-                        },
-                      ),
-                    ]),
-                    SizedBox(height: SizeTokens.spacingXxl),
-
-                    // ─── ÇIKIŞ BUTONU ────────────────────
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          // TODO: Çıkış yap flow
-                          viewModel.logout();
-                        },
-                        icon: Icon(Icons.logout, size: SizeTokens.iconSm, color: AppTheme.error),
-                        label: Text(
-                          'Çıkış Yap',
-                          style: Theme.of(context).textTheme.labelLarge?.copyWith(color: AppTheme.error),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          side: BorderSide(color: AppTheme.error.withValues(alpha: 0.3)),
-                        ),
-                      ),
-                    ),
-                    SizedBox(height: SizeTokens.spacing3xl),
-                  ],
-                ),
-              ),
+      appBar: AppBar(
+        centerTitle: true,
+        title: const Text(
+          'Profil',
+          style: TextStyle(
+            color: AppTheme.textOnPrimary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        backgroundColor: AppTheme.primary,
+        foregroundColor: AppTheme.textOnPrimary,
+        elevation: 0,
+        scrolledUnderElevation: 0,
       ),
+      body: viewModel.isLoading
+          ? const Center(child: CircularProgressIndicator(color: AppTheme.accent))
+          : SingleChildScrollView(
+              padding: EdgeInsets.symmetric(horizontal: SizeTokens.spacingLg),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  SizedBox(height: SizeTokens.spacingXxl),
+
+                  // ─── KULLANICI KARTI ──────────────────
+                  _buildUserCard(viewModel),
+                  SizedBox(height: SizeTokens.spacingXxl),
+
+                  // ─── AYARLAR LİSTESİ ─────────────────
+                  _buildSection('Galeri Bilgileri', [
+                    _SettingsItem(
+                      icon: Icons.store_outlined,
+                      title: 'Galeri Adı',
+                      subtitle: viewModel.galleryName ?? '-',
+                    ),
+                    _SettingsItem(
+                      icon: Icons.phone_outlined,
+                      title: 'Telefon',
+                      subtitle: viewModel.phone ?? '-',
+                    ),
+                    _SettingsItem(
+                      icon: Icons.location_on_outlined,
+                      title: 'Adres',
+                      subtitle: viewModel.address ?? '-',
+                    ),
+                  ]),
+                  SizedBox(height: SizeTokens.spacingLg),
+
+                  _buildSection('Yönetim', [
+                    _SettingsItem(
+                      icon: Icons.people_outline,
+                      title: 'Kullanıcı Yönetimi',
+                      trailing: Icon(
+                        Icons.chevron_right,
+                        size: SizeTokens.iconSm,
+                        color: AppTheme.textTertiary,
+                      ),
+                      onTap: () {
+                        // TODO: Kullanıcı yönetimi sayfasına navigate
+                      },
+                    ),
+                  ]),
+                  SizedBox(height: SizeTokens.spacingXxl),
+
+                  // ─── ÇIKIŞ BUTONU ────────────────────
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        // TODO: Çıkış yap flow
+                        viewModel.logout();
+                      },
+                      icon: Icon(Icons.logout, size: SizeTokens.iconSm, color: AppTheme.error),
+                      label: Text(
+                        'Çıkış Yap',
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(color: AppTheme.error),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: AppTheme.error.withValues(alpha: 0.3)),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: SizeTokens.spacing3xl),
+                ],
+              ),
+            ),
     );
   }
 

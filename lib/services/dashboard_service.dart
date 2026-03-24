@@ -44,6 +44,7 @@ class DashboardService {
         'total_expense': 45000.0,
         'insurance_date': '2026-03-19',
         'inspection_date': '2026-03-12',
+        'image_url': 'assets/images/vehicles/bmw_3_serisi.png',
         'created_at': '2026-03-01T10:00:00',
       },
       {
@@ -60,6 +61,7 @@ class DashboardService {
         'payment_method': 'Çek',
         'status': 'STOKTA',
         'total_expense': 28000.0,
+        'image_url': 'assets/images/vehicles/mercedes_c200.png',
         'created_at': '2026-03-02T14:00:00',
       },
     
@@ -79,6 +81,7 @@ class DashboardService {
         'id': 1,
         'vehicle_id': 1,
         'vehicle_name': 'BMW 320i',
+        'image_url': 'assets/images/vehicles/bmw_3_serisi.png',
         'alert_type': 'sigorta',
         'due_date': '2026-03-19',
         'remaining_days': 12,
@@ -87,6 +90,7 @@ class DashboardService {
         'id': 2,
         'vehicle_id': 1,
         'vehicle_name': 'BMW 320i',
+        'image_url': 'assets/images/vehicles/bmw_3_serisi.png',
         'alert_type': 'muayene',
         'due_date': '2026-03-12',
         'remaining_days': 5,

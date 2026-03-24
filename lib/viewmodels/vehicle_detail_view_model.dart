@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:oto_galeri/models/vehicle_model.dart';
 import 'package:oto_galeri/models/expense_model.dart';
+import 'package:oto_galeri/models/vehicle_usage_model.dart';
 import 'package:oto_galeri/services/vehicle_service.dart';
 import 'package:oto_galeri/services/expense_service.dart';
+import 'package:oto_galeri/services/vehicle_usage_service.dart';
 import 'package:oto_galeri/core/utils/logger.dart';
 
 /// VehicleDetailViewModel - Araç detay ekranı state yönetimi
 class VehicleDetailViewModel extends ChangeNotifier {
   final VehicleService _vehicleService = VehicleService();
   final ExpenseService _expenseService = ExpenseService();
+  final VehicleUsageService _usageService = VehicleUsageService();
 
   // ─── STATE ────────────────────────────────────────────
   bool isLoading = false;
   String? errorMessage;
   VehicleModel? vehicle;
   List<ExpenseModel>? expenses;
+  List<VehicleUsageModel> usageRecords = [];
 
   final int vehicleId;
 
@@ -47,6 +51,9 @@ class VehicleDetailViewModel extends ChangeNotifier {
           errorMessage ??= error.userMessage;
         },
       );
+
+      // Kullanım kayıtlarını local store'dan yükle
+      usageRecords = _usageService.getUsageForVehicle(vehicleId);
     } catch (e) {
       AppLogger.error('Araç detay init hatası', error: e);
       errorMessage = 'Veriler yüklenirken bir hata oluştu.';
@@ -102,5 +109,40 @@ class VehicleDetailViewModel extends ChangeNotifier {
   // ─── RETRY ────────────────────────────────────────────
   Future<void> onRetry() async {
     await init();
+  }
+
+  // ─── KULLANIM TAKİBİ ──────────────────────────────────
+
+  /// Araca ait en güncel km değeri (son bitiş km'si)
+  int? get latestKm => _usageService.getLatestKm(vehicleId);
+
+  /// Yeni kullanım kaydı ekle (demo: local store)
+  Future<bool> addUsage({
+    required DateTime date,
+    required String staffName,
+    int? startKm,
+    int? endKm,
+    String? expenseType,
+    double? expenseAmount,
+    String? description,
+  }) async {
+    try {
+      final record = await _usageService.addUsage(
+        vehicleId: vehicleId,
+        date: date,
+        staffName: staffName,
+        startKm: startKm,
+        endKm: endKm,
+        expenseType: expenseType,
+        expenseAmount: expenseAmount,
+        description: description,
+      );
+      usageRecords = [record, ...usageRecords];
+      notifyListeners();
+      return true;
+    } catch (e) {
+      AppLogger.error('addUsage hatası', error: e);
+      return false;
+    }
   }
 }

@@ -6,6 +6,8 @@ import 'package:oto_galeri/core/utils/vehicle_image_helper.dart';
 import 'package:oto_galeri/viewmodels/expenses_view_model.dart';
 import 'package:oto_galeri/models/expense_model.dart';
 import 'package:oto_galeri/views/expenses/widgets/expense_bottom_sheet.dart';
+import 'package:oto_galeri/views/expenses/expense_add_view.dart';
+import 'package:oto_galeri/viewmodels/expense_add_view_model.dart';
 import 'package:provider/provider.dart';
 
 /// ExpensesView - Giderler listesi (araç bazında gruplu)
@@ -45,14 +47,26 @@ class _ExpensesViewState extends State<ExpensesView> {
         centerTitle: true,
         title: const Text(
           'Giderler',
-          style: TextStyle(color: AppTheme.primary),
+          style: TextStyle(
+            color: AppTheme.textOnPrimary,
+            fontWeight: FontWeight.w600,
+          ),
         ),
-        backgroundColor: AppTheme.background,
-        surfaceTintColor: AppTheme.background,
+        backgroundColor: AppTheme.primary,
+        foregroundColor: AppTheme.textOnPrimary,
         elevation: 0,
+        scrolledUnderElevation: 0,
         actions: [
           _buildFilterIcon(context, viewModel),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        heroTag: 'add_expense_fab',
+        onPressed: () => _openAddExpense(context, viewModel),
+        backgroundColor: AppTheme.primary,
+        foregroundColor: AppTheme.textOnPrimary,
+        elevation: 3,
+        child: Icon(Icons.add, size: SizeTokens.iconMd),
       ),
       body: SafeArea(
         child: Column(
@@ -84,6 +98,24 @@ class _ExpensesViewState extends State<ExpensesView> {
         ),
       ),
     );
+  }
+
+  // ─── MASRAF EKLE NAVİGASYON ──────────────────────────────
+  Future<void> _openAddExpense(
+      BuildContext context, ExpensesViewModel expensesViewModel) async {
+    final vm = context.read<ExpenseAddViewModel>();
+    vm.reset();
+    final result = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => ChangeNotifierProvider.value(
+          value: vm,
+          child: const ExpenseAddView(),
+        ),
+      ),
+    );
+    if (result == true) {
+      expensesViewModel.refresh();
+    }
   }
 
   // ─── HEADER ─────────────────────────────────────────────

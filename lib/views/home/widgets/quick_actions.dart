@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:oto_galeri/app/app_theme.dart';
 import 'package:oto_galeri/core/responsive/size_tokens.dart';
+import 'package:oto_galeri/viewmodels/expense_add_view_model.dart';
+import 'package:oto_galeri/views/expenses/expense_add_view.dart';
 import 'package:oto_galeri/views/vehicles/vehicle_add_view.dart';
+import 'package:provider/provider.dart';
 
 /// QuickActions - Hızlı işlem butonları
 class QuickActions extends StatelessWidget {
@@ -57,7 +60,18 @@ class QuickActions extends StatelessWidget {
                     icon: Icons.receipt_long_outlined,
                     label: 'Masraf Ekle',
                     color: AppTheme.warning,
-                    onTap: () {},
+                    onTap: () {
+                      final vm = context.read<ExpenseAddViewModel>();
+                      vm.reset();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => ChangeNotifierProvider.value(
+                            value: vm,
+                            child: const ExpenseAddView(),
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
                 SizedBox(width: SizeTokens.spacingXxs),

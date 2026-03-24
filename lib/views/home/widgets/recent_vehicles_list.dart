@@ -85,10 +85,33 @@ class _VehicleRow extends StatelessWidget {
               color: AppTheme.accent.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(SizeTokens.radiusSm),
             ),
-            child: Icon(
-              Icons.directions_car,
-              color: AppTheme.accent,
-              size: SizeTokens.iconSm,
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(SizeTokens.radiusSm),
+              child: vehicle.imageUrl != null && vehicle.imageUrl!.isNotEmpty
+                  ? (vehicle.imageUrl!.startsWith('http')
+                      ? Image.network(
+                          vehicle.imageUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Icon(
+                            Icons.directions_car,
+                            color: AppTheme.accent,
+                            size: SizeTokens.iconSm,
+                          ),
+                        )
+                      : Image.asset(
+                          vehicle.imageUrl!,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Icon(
+                            Icons.directions_car,
+                            color: AppTheme.accent,
+                            size: SizeTokens.iconSm,
+                          ),
+                        ))
+                  : Icon(
+                      Icons.directions_car,
+                      color: AppTheme.accent,
+                      size: SizeTokens.iconSm,
+                    ),
             ),
           ),
           SizedBox(width: SizeTokens.spacingMd),

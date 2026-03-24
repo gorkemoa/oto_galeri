@@ -34,14 +34,23 @@ class _VehiclesViewState extends State<VehiclesView> {
       backgroundColor: AppTheme.background,
       appBar: AppBar(
         centerTitle: true,
-        title: const Text('Araçlar', style: TextStyle(color: AppTheme.primary),),
-        backgroundColor: AppTheme.background,
-        surfaceTintColor: AppTheme.background,
+        title: const Text(
+          'Araçlar',
+          style: TextStyle(
+            color: AppTheme.textOnPrimary,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        backgroundColor: AppTheme.primary,
+        foregroundColor: AppTheme.textOnPrimary,
+        elevation: 0,
+        scrolledUnderElevation: 0,
         actions: [
           _buildFilterIcon(context, viewModel),
         ],
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'add_vehicle_fab',
         onPressed: () => _openAddVehicle(context, viewModel),
         backgroundColor: AppTheme.primary,
         foregroundColor: AppTheme.textOnPrimary,
