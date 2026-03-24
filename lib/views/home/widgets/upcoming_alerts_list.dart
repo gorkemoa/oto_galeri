@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:oto_galeri/app/app_theme.dart';
 import 'package:oto_galeri/core/responsive/size_tokens.dart';
 import 'package:oto_galeri/models/alert_model.dart';
+import 'package:oto_galeri/models/vehicle_model.dart';
+import 'package:oto_galeri/viewmodels/vehicle_detail_view_model.dart';
+import 'package:oto_galeri/views/vehicles/vehicle_detail_view.dart';
+import 'package:provider/provider.dart';
 
 /// UpcomingAlertsList - Yaklaşan sigorta/muayene uyarıları
 class UpcomingAlertsList extends StatelessWidget {
@@ -73,110 +77,133 @@ class _AlertRow extends StatelessWidget {
       _ => alert.alertType ?? '',
     };
 
-    return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: SizeTokens.spacingMd,
-        vertical: SizeTokens.spacingMd,
-      ),
-      child: Row(
-        children: [
-          Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Container(
-                width: SizeTokens.avatarMd,
-                height: SizeTokens.avatarMd,
-                decoration: BoxDecoration(
-                  color: AppTheme.accent.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(SizeTokens.radiusSm),
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(SizeTokens.radiusSm),
-                  child: alert.imageUrl != null && alert.imageUrl!.isNotEmpty
-                      ? (alert.imageUrl!.startsWith('http')
-                          ? Image.network(
-                              alert.imageUrl!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => Icon(
-                                Icons.directions_car,
-                                color: AppTheme.accent,
-                                size: SizeTokens.iconSm,
-                              ),
-                            )
-                          : Image.asset(
-                              alert.imageUrl!,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) => Icon(
-                                Icons.directions_car,
-                                color: AppTheme.accent,
-                                size: SizeTokens.iconSm,
-                              ),
-                            ))
-                      : Icon(
-                          Icons.directions_car,
-                          color: AppTheme.accent,
-                          size: SizeTokens.iconSm,
-                        ),
-                ),
+    return InkWell(
+      onTap: () {
+        if (alert.vehicleId != null) {
+          final vehicle = VehicleModel(
+            id: alert.vehicleId,
+            brand: alert.vehicleName?.split(' ').first,
+            model: alert.vehicleName?.split(' ').skip(1).join(' '),
+            imageUrl: alert.imageUrl,
+          );
+
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ChangeNotifierProvider(
+                create: (_) => VehicleDetailViewModel(vehicleId: alert.vehicleId!),
+                child: VehicleDetailView(initialVehicle: vehicle),
               ),
-              Positioned(
-                right: -4,
-                top: -4,
-                child: Container(
-                  padding: const EdgeInsets.all(2),
-                  decoration: BoxDecoration(
-                    color: AppTheme.surface,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    isUrgent ? Icons.warning_amber_rounded : Icons.schedule_outlined,
-                    color: alertColor,
-                    size: 14,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(width: SizeTokens.spacingMd),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            ),
+          );
+        }
+      },
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: SizeTokens.spacingMd,
+          vertical: SizeTokens.spacingMd,
+        ),
+        child: Row(
+          children: [
+            Stack(
+              clipBehavior: Clip.none,
               children: [
-                Text(
-                  alert.vehicleName ?? '',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                        color: AppTheme.textPrimary,
-                      ),
+                Container(
+                  width: SizeTokens.avatarMd,
+                  height: SizeTokens.avatarMd,
+                  decoration: BoxDecoration(
+                    color: AppTheme.accent.withValues(alpha: 0.08),
+                    borderRadius: BorderRadius.circular(SizeTokens.radiusSm),
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(SizeTokens.radiusSm),
+                    child: alert.imageUrl != null && alert.imageUrl!.isNotEmpty
+                        ? (alert.imageUrl!.startsWith('http')
+                            ? Image.network(
+                                alert.imageUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => Icon(
+                                  Icons.directions_car,
+                                  color: AppTheme.accent,
+                                  size: SizeTokens.iconSm,
+                                ),
+                              )
+                            : Image.asset(
+                                alert.imageUrl!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) => Icon(
+                                  Icons.directions_car,
+                                  color: AppTheme.accent,
+                                  size: SizeTokens.iconSm,
+                                ),
+                              ))
+                        : Icon(
+                            Icons.directions_car,
+                            color: AppTheme.accent,
+                            size: SizeTokens.iconSm,
+                          ),
+                  ),
                 ),
-                SizedBox(height: SizeTokens.spacingXxs),
-                Text(
-                  '$alertTypeLabel bitmesine ${alert.remainingDays ?? 0} gün kaldı',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: AppTheme.textTertiary,
-                      ),
+                Positioned(
+                  right: -4,
+                  top: -4,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: AppTheme.surface,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      isUrgent ? Icons.warning_amber_rounded : Icons.schedule_outlined,
+                      color: alertColor,
+                      size: 14,
+                    ),
+                  ),
                 ),
               ],
             ),
-          ),
-          Container(
-            padding: EdgeInsets.symmetric(
-              horizontal: SizeTokens.spacingSm,
-              vertical: SizeTokens.spacingXxs,
-            ),
-            decoration: BoxDecoration(
-              color: alertColor.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(SizeTokens.radiusFull),
-            ),
-            child: Text(
-              '${alert.remainingDays ?? 0} gün',
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: alertColor,
-                    fontWeight: FontWeight.w600,
+            SizedBox(width: SizeTokens.spacingMd),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    alert.vehicleName ?? '',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.textPrimary,
+                        ),
                   ),
+                  SizedBox(height: SizeTokens.spacingXxs),
+                  Text(
+                    '${alertTypeLabel} bitmesine ${alert.remainingDays ?? 0} gün kaldı',
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: AppTheme.textTertiary,
+                          fontSize: 10,
+                        ),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+            Container(
+              padding: EdgeInsets.symmetric(
+                horizontal: SizeTokens.spacingSm,
+                vertical: SizeTokens.spacingXxs,
+              ),
+              decoration: BoxDecoration(
+                color: alertColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(SizeTokens.radiusFull),
+              ),
+              child: Text(
+                '${alert.remainingDays ?? 0} gün',
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                      color: alertColor,
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -3,6 +3,9 @@ import 'package:intl/intl.dart';
 import 'package:oto_galeri/app/app_theme.dart';
 import 'package:oto_galeri/core/responsive/size_tokens.dart';
 import 'package:oto_galeri/models/vehicle_model.dart';
+import 'package:oto_galeri/viewmodels/vehicle_detail_view_model.dart';
+import 'package:oto_galeri/views/vehicles/vehicle_detail_view.dart';
+import 'package:provider/provider.dart';
 
 /// RecentVehiclesList - Son eklenen araçlar listesi
 class RecentVehiclesList extends StatelessWidget {
@@ -71,91 +74,107 @@ class _VehicleRow extends StatelessWidget {
     );
     final kmFormat = NumberFormat('#,###', 'tr_TR');
 
-    return Padding(
-      padding: EdgeInsets.symmetric(
-        horizontal: SizeTokens.spacingMd,
-        vertical: SizeTokens.spacingMd,
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: SizeTokens.avatarMd,
-            height: SizeTokens.avatarMd,
-            decoration: BoxDecoration(
-              color: AppTheme.accent.withValues(alpha: 0.08),
-              borderRadius: BorderRadius.circular(SizeTokens.radiusSm),
+    return InkWell(
+      onTap: () {
+        if (vehicle.id != null) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ChangeNotifierProvider(
+                create: (_) => VehicleDetailViewModel(vehicleId: vehicle.id!),
+                child: VehicleDetailView(initialVehicle: vehicle),
+              ),
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(SizeTokens.radiusSm),
-              child: vehicle.imageUrl != null && vehicle.imageUrl!.isNotEmpty
-                  ? (vehicle.imageUrl!.startsWith('http')
-                      ? Image.network(
-                          vehicle.imageUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Icon(
-                            Icons.directions_car,
-                            color: AppTheme.accent,
-                            size: SizeTokens.iconSm,
-                          ),
-                        )
-                      : Image.asset(
-                          vehicle.imageUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Icon(
-                            Icons.directions_car,
-                            color: AppTheme.accent,
-                            size: SizeTokens.iconSm,
-                          ),
-                        ))
-                  : Icon(
-                      Icons.directions_car,
-                      color: AppTheme.accent,
-                      size: SizeTokens.iconSm,
-                    ),
+          );
+        }
+      },
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: SizeTokens.spacingMd,
+          vertical: SizeTokens.spacingMd,
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: SizeTokens.avatarMd,
+              height: SizeTokens.avatarMd,
+              decoration: BoxDecoration(
+                color: AppTheme.accent.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(SizeTokens.radiusSm),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(SizeTokens.radiusSm),
+                child: vehicle.imageUrl != null && vehicle.imageUrl!.isNotEmpty
+                    ? (vehicle.imageUrl!.startsWith('http')
+                        ? Image.network(
+                            vehicle.imageUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Icon(
+                              Icons.directions_car,
+                              color: AppTheme.accent,
+                              size: SizeTokens.iconSm,
+                            ),
+                          )
+                        : Image.asset(
+                            vehicle.imageUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) => Icon(
+                              Icons.directions_car,
+                              color: AppTheme.accent,
+                              size: SizeTokens.iconSm,
+                            ),
+                          ))
+                    : Icon(
+                        Icons.directions_car,
+                        color: AppTheme.accent,
+                        size: SizeTokens.iconSm,
+                      ),
+              ),
             ),
-          ),
-          SizedBox(width: SizeTokens.spacingMd),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+            SizedBox(width: SizeTokens.spacingMd),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    vehicle.fullName,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.textPrimary,
+                        ),
+                  ),
+                  SizedBox(height: SizeTokens.spacingXxs),
+                  Text(
+                    '${vehicle.year ?? ''} · ${kmFormat.format(vehicle.kilometer ?? 0)} KM',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: AppTheme.textTertiary,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  vehicle.fullName,
+                  currencyFormat.format(vehicle.purchasePrice ?? 0),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w600,
                         color: AppTheme.textPrimary,
+                        fontWeight: FontWeight.w700,
                       ),
                 ),
                 SizedBox(height: SizeTokens.spacingXxs),
                 Text(
-                  '${vehicle.year ?? ''} · ${kmFormat.format(vehicle.kilometer ?? 0)} KM',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  vehicle.plate ?? '',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
                         color: AppTheme.textTertiary,
+                        fontSize: 10,
                       ),
                 ),
               ],
             ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                currencyFormat.format(vehicle.purchasePrice ?? 0),
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppTheme.textPrimary,
-                      fontWeight: FontWeight.w700,
-                    ),
-              ),
-              SizedBox(height: SizeTokens.spacingXxs),
-              Text(
-                'Alış',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppTheme.textTertiary,
-                    ),
-              ),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
