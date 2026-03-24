@@ -1,4 +1,4 @@
-package com.example.oto_galeri
+package com.rivorya.otogaleri
 
 import io.flutter.embedding.android.FlutterActivity
 
