@@ -8,7 +8,7 @@
 PRODUCT_NAME = oto_galeri
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.example.otoGaleri
+PRODUCT_BUNDLE_IDENTIFIER = com.rivorya.otogaleri
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2026 com.example. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2026 com.rivorya. All rights reserved.
