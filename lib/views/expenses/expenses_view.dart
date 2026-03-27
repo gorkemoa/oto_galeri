@@ -20,10 +20,17 @@ class ExpensesView extends StatefulWidget {
 
 class _ExpensesViewState extends State<ExpensesView> {
   final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocus = FocusNode();
+  bool _searchExpanded = false;
 
   @override
   void initState() {
     super.initState();
+    _searchFocus.addListener(() {
+      if (_searchFocus.hasFocus && !_searchExpanded) {
+        setState(() => _searchExpanded = true);
+      }
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<ExpensesViewModel>().init();
     });
@@ -32,6 +39,7 @@ class _ExpensesViewState extends State<ExpensesView> {
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocus.dispose();
     super.dispose();
   }
 
@@ -45,19 +53,27 @@ class _ExpensesViewState extends State<ExpensesView> {
       backgroundColor: AppTheme.background,
       appBar: AppBar(
         centerTitle: true,
-        title: const Text(
-          'Giderler',
-          style: TextStyle(
-            color: AppTheme.textOnPrimary,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
         backgroundColor: AppTheme.primary,
         foregroundColor: AppTheme.textOnPrimary,
         elevation: 0,
         scrolledUnderElevation: 0,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Giderler',
+              style: TextStyle(
+                color: AppTheme.textOnPrimary,
+                fontWeight: FontWeight.w700,
+                fontSize: SizeTokens.fontMd,
+              ),
+            ),
+          
+          ],
+        ),
         actions: [
           _buildFilterIcon(context, viewModel),
+          SizedBox(width: SizeTokens.spacingXs),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -124,48 +140,152 @@ class _ExpensesViewState extends State<ExpensesView> {
     ExpensesViewModel viewModel,
     NumberFormat currencyFormat,
   ) {
+    final showTotal =
+        viewModel.expenses != null && viewModel.expenses!.isNotEmpty;
+
+    // _searchExpanded: true → arama geniş, toplam dar
+    //                  false → toplam geniş, arama dar
+
     return Container(
-      color: AppTheme.surface,
+      color: AppTheme.primary,
       padding: EdgeInsets.fromLTRB(
         SizeTokens.spacingLg,
-        SizeTokens.spacingMd,
+        SizeTokens.spacingXs,
         SizeTokens.spacingLg,
         SizeTokens.spacingMd,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: (q) {
-                    viewModel.setSearchQuery(q);
-                    setState(() {});
-                  },
-                  decoration: InputDecoration(
-                    hintText: 'Gider ara...',
-                    prefixIcon: Icon(Icons.search, size: SizeTokens.iconSm),
-                    suffixIcon: _searchController.text.isNotEmpty
-                        ? IconButton(
-                            icon: Icon(Icons.clear,
-                                size: SizeTokens.iconXs,
-                                color: AppTheme.textSecondary),
-                            onPressed: () {
-                              _searchController.clear();
-                              viewModel.setSearchQuery('');
-                              setState(() {});
-                            },
-                          )
-                        : null,
+      child: SizedBox(
+        height: SizeTokens.inputHeight,
+        child: !showTotal
+            // Toplam yoksa arama tüm satırı kaplar
+            ? _buildSearchField(viewModel, fullWidth: true)
+            : Row(
+                children: [
+                  // ─── ARAMA ──────────────────────────
+                  AnimatedSize(
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeOutCubic,
+                    child: SizedBox(
+                      width: _searchExpanded
+                          ? MediaQuery.of(context).size.width *
+                              0.68
+                          : MediaQuery.of(context).size.width *
+                              0.47,
+                      child: _buildSearchField(viewModel,
+                          fullWidth: false),
+                    ),
                   ),
-                ),
+                  SizedBox(width: SizeTokens.spacingSm),
+                  // ─── TOPLAM ──────────────────────────
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () {
+                        _searchFocus.unfocus();
+                        setState(() => _searchExpanded = false);
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 220),
+                        curve: Curves.easeOutCubic,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: SizeTokens.spacingSm,
+                          vertical: SizeTokens.spacingXs,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _searchExpanded
+                              ? AppTheme.textOnPrimary
+                                  .withValues(alpha: 0.07)
+                              : AppTheme.textOnPrimary
+                                  .withValues(alpha: 0.14),
+                          borderRadius: BorderRadius.circular(
+                              SizeTokens.radiusMd),
+                        ),
+                        child: Column(
+                          mainAxisAlignment:
+                              MainAxisAlignment.center,
+                          crossAxisAlignment:
+                              CrossAxisAlignment.end,
+                          children: [
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                currencyFormat
+                                    .format(viewModel.totalExpense),
+                                style: TextStyle(
+                                  color: AppTheme.accent,
+                                  fontSize: SizeTokens.fontSm,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                            if (!_searchExpanded)
+                              Text(
+                                'Toplam Gider',
+                                style: TextStyle(
+                                  color: AppTheme.textOnPrimary
+                                      .withValues(alpha: 0.5),
+                                  fontSize: SizeTokens.fontXxs,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-             
-            ],
-          ),
-        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchField(ExpensesViewModel viewModel,
+      {required bool fullWidth}) {
+    return TextField(
+      controller: _searchController,
+      focusNode: _searchFocus,
+      onChanged: (q) {
+        viewModel.setSearchQuery(q);
+        setState(() => _searchExpanded = true);
+      },
+      onTap: () => setState(() => _searchExpanded = true),
+      style: TextStyle(
+          color: AppTheme.textOnPrimary, fontSize: SizeTokens.fontXs),
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: AppTheme.textOnPrimary.withValues(alpha: 0.12),
+        hintText: _searchExpanded ? 'Gider ara...' : 'Ara...',
+        hintStyle: TextStyle(
+            color: AppTheme.textOnPrimary.withValues(alpha: 0.45),
+            fontSize: SizeTokens.fontXs),
+        prefixIcon: Icon(Icons.search,
+            size: SizeTokens.iconXs,
+            color: AppTheme.textOnPrimary.withValues(alpha: 0.7)),
+        suffixIcon: _searchController.text.isNotEmpty
+            ? GestureDetector(
+                onTap: () {
+                  _searchController.clear();
+                  viewModel.setSearchQuery('');
+                  _searchFocus.unfocus();
+                  setState(() => _searchExpanded = false);
+                },
+                child: Icon(Icons.close,
+                    size: SizeTokens.iconXs,
+                    color:
+                        AppTheme.textOnPrimary.withValues(alpha: 0.6)),
+              )
+            : null,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(SizeTokens.radiusMd),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(SizeTokens.radiusMd),
+          borderSide: BorderSide(
+              color: AppTheme.textOnPrimary.withValues(alpha: 0.3)),
+        ),
+        contentPadding:
+            EdgeInsets.symmetric(vertical: SizeTokens.spacingXs),
+        isDense: true,
       ),
     );
   }

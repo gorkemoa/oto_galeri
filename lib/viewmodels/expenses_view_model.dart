@@ -128,6 +128,12 @@ class ExpensesViewModel extends ChangeNotifier {
     init();
   }
 
+  /// Mevcut filtrelere (arama dahil) göre toplam gider tutarı
+  double get totalExpense {
+    final all = groupedByVehicle.values.expand((list) => list).toList();
+    return all.fold(0.0, (sum, e) => sum + (e.amount ?? 0.0));
+  }
+
   /// Giderleri araç bazında gruplar: vehicleId → gider listesi (tarihe göre azalan)
   Map<int, List<ExpenseModel>> get groupedByVehicle {
     var all = expenses ?? [];
