@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:oto_galeri/app/app_theme.dart';
 import 'package:oto_galeri/core/responsive/size_tokens.dart';
 import 'package:oto_galeri/viewmodels/expense_add_view_model.dart';
+import 'package:oto_galeri/viewmodels/vehicle_sale_view_model.dart';
 import 'package:oto_galeri/views/expenses/expense_add_view.dart';
+import 'package:oto_galeri/views/vehicle_sale/vehicle_sale_view.dart';
 import 'package:oto_galeri/views/vehicles/vehicle_add_view.dart';
 import 'package:provider/provider.dart';
 
@@ -80,7 +82,18 @@ class QuickActions extends StatelessWidget {
                     icon: Icons.sell_outlined,
                     label: 'Araç Sat',
                     color: AppTheme.success,
-                    onTap: () {},
+                    onTap: () {
+                      final vm = context.read<VehicleSaleViewModel>();
+                      vm.reset();
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => ChangeNotifierProvider.value(
+                            value: vm,
+                            child: const VehicleSaleView(),
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ],

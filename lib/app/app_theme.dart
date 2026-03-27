@@ -9,11 +9,11 @@ class AppTheme {
   AppTheme._();
 
   // ─── RENKLER ────────────────────────────────────────────
-  static const Color primary = Color(0xFF0F172A);
-  static const Color primaryContainer = Color(0xFF1E293B);
-  static const Color secondary = Color(0xFFC9A227);
-  static const Color secondaryContainer = Color(0xFFF5E7B2);
-  static const Color accent = Color(0xFF2E7DFF);
+  static const Color primary = Color(0xFF231F20); // Dark Gray / Black
+  static const Color accent = Color(0xFFFFCE00);  // Yellow / Gold
+  static const Color primaryContainer = Color(0xFF332D2F);
+  static const Color secondary = Color(0xFFFFCE00);
+  static const Color secondaryContainer = Color(0xFFFFF4CC);
   static const Color background = Color(0xFFFAFAFA);
   static const Color surface = Color(0xFFFFFFFF);
   static const Color error = Color(0xFFDC2626);
@@ -21,11 +21,11 @@ class AppTheme {
   static const Color warning = Color(0xFFF59E0B);
 
   // ─── TEXT RENKLERI ─────────────────────────────────────
-  static const Color textPrimary = Color(0xFF0F172A);
+  static const Color textPrimary = Color(0xFF231F20);
   static const Color textSecondary = Color(0xFF64748B);
   static const Color textTertiary = Color(0xFF9CA3AF);
   static const Color textOnPrimary = Color(0xFFFFFFFF);
-  static const Color textOnAccent = Color(0xFFFFFFFF);
+  static const Color textOnAccent = Color(0xFF231F20);
 
   // ─── BORDER / DIVIDER ─────────────────────────────────
   static const Color border = Color(0xFFE5E7EB);

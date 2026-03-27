@@ -23,6 +23,8 @@ class ApiConstants {
 
   // ─── REPORTS (RAPORLAR) ────────────────────────────────
   static const String reports = '$apiVersion/reports';
+  static const String reportSummary = '$apiVersion/reports/summary';
+  static const String reportVehicleProfitability = '$apiVersion/reports/vehicle-profitability';
   static const String reportMonthlyProfit = '$apiVersion/reports/monthly-profit';
   static const String reportExpenseDistribution = '$apiVersion/reports/expense-distribution';
   static const String reportMostProfitable = '$apiVersion/reports/most-profitable';

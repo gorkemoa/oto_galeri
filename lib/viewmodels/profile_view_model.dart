@@ -25,7 +25,7 @@ class ProfileViewModel extends ChangeNotifier {
 
       // Geçici dummy veri (Service katmanından gelecek)
       userName = 'Görkem';
-      galleryName = 'Fikret Auto Gallery';
+      galleryName = 'OtoGens Auto Gallery';
       phone = '0532 000 00 00';
       address = 'İstanbul, Türkiye';
     } catch (e) {

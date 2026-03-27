@@ -49,7 +49,7 @@ class _HomeViewState extends State<HomeView> {
                   ),
             ),
             Text(
-              'Fikret Auto Gallery',
+              'OtoGens Auto Gallery',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: AppTheme.textOnPrimary.withValues(alpha: 0.65),
                   ),
@@ -57,25 +57,16 @@ class _HomeViewState extends State<HomeView> {
           ],
         ),
         actions: [
-          Padding(
-            padding: EdgeInsets.only(right: SizeTokens.spacingLg),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Icon(
-                  Icons.storefront_outlined,
-                  color: AppTheme.textOnPrimary.withValues(alpha: 0.75),
-                  size: SizeTokens.iconSm,
-                ),
-                Text(
-                  DateFormat('d MMM yyyy', 'tr_TR').format(DateTime.now()),
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                        color: AppTheme.textOnPrimary.withValues(alpha: 0.5),
-                        fontSize: SizeTokens.fontXxs,
-                      ),
-                ),
-              ],
+          Container(
+            height: double.infinity,
+            alignment: Alignment.center,
+            padding: EdgeInsets.symmetric(horizontal: SizeTokens.spacingMd),
+            decoration:  BoxDecoration(
+              color: Colors.white,
+            ),
+            child: Image.asset(
+              'assets/images/image.png',
+              fit: BoxFit.contain,
             ),
           ),
         ],

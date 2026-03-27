@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:oto_galeri/app/app_theme.dart';
 import 'package:oto_galeri/core/responsive/size_tokens.dart';
 import 'package:oto_galeri/viewmodels/reports_view_model.dart';
+import 'package:oto_galeri/views/reports/widgets/expense_distribution_card.dart';
+import 'package:oto_galeri/views/reports/widgets/kpi_row.dart';
+import 'package:oto_galeri/views/reports/widgets/monthly_profit_chart.dart';
+import 'package:oto_galeri/views/reports/widgets/period_filter_bar.dart';
+import 'package:oto_galeri/views/reports/widgets/vehicle_profit_list.dart';
 import 'package:provider/provider.dart';
 
-/// ReportsView - Raporlar ekranı (grafikler)
+/// ReportsView - Araç bazlı kârlılık raporu ekranı
 class ReportsView extends StatefulWidget {
   const ReportsView({super.key});
 
@@ -22,6 +26,29 @@ class _ReportsViewState extends State<ReportsView> {
     });
   }
 
+  Future<void> _onExportCsv() async {
+    final viewModel = context.read<ReportsViewModel>();
+    await viewModel.exportCsv();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.check_circle_outline,
+                size: SizeTokens.iconSm,
+                color: AppTheme.textOnPrimary),
+            SizedBox(width: SizeTokens.spacingSm),
+            const Expanded(
+                child: Text('CSV panoya kopyalandı. Yapıştırıp kullanabilirsiniz.')),
+          ],
+        ),
+        backgroundColor: AppTheme.success,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<ReportsViewModel>();
@@ -30,244 +57,310 @@ class _ReportsViewState extends State<ReportsView> {
       backgroundColor: AppTheme.background,
       appBar: AppBar(
         centerTitle: true,
-        title: const Text(
-          'Raporlar',
-          style: TextStyle(
-            color: AppTheme.textOnPrimary,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
         backgroundColor: AppTheme.primary,
         foregroundColor: AppTheme.textOnPrimary,
         elevation: 0,
         scrolledUnderElevation: 0,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Rapoarlar',
+              style: TextStyle(
+                color: AppTheme.textOnPrimary,
+                fontWeight: FontWeight.w700,
+                fontSize: SizeTokens.fontMd,
+              ),
+            ),
+           
+          ],
+        ),
+        actions: [
+          if (!viewModel.isLoading && viewModel.vehicleProfits.isNotEmpty)
+            IconButton(
+              tooltip: 'CSV olarak kopyala',
+              onPressed: _onExportCsv,
+              icon: Icon(
+                Icons.download_outlined,
+                size: SizeTokens.iconSm,
+                color: AppTheme.textOnPrimary,
+              ),
+            ),
+          SizedBox(width: SizeTokens.spacingXs),
+        ],
       ),
-      body: viewModel.isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppTheme.accent))
-          : viewModel.errorMessage != null
-              ? _buildError(viewModel)
-              : RefreshIndicator(
-                  color: AppTheme.accent,
-                  onRefresh: viewModel.refresh,
-                  child: SingleChildScrollView(
-                    physics: const AlwaysScrollableScrollPhysics(),
-                    padding: EdgeInsets.symmetric(horizontal: SizeTokens.spacingLg),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(height: SizeTokens.spacingXxl),
-
-                        // ─── AYLIK KAR GRAFİĞİ ───────────────
-                        _ReportCard(
-                          title: 'Aylık Kar',
-                          icon: Icons.trending_up,
-                          child: _buildMonthlyProfitChart(viewModel),
+      body: SafeArea(
+        child: viewModel.isLoading
+            ? const Center(
+                child:
+                    CircularProgressIndicator(color: AppTheme.accent))
+            : viewModel.errorMessage != null
+                ? _buildError(viewModel)
+                : Column(
+                    children: [
+                      // ─── DÖNEM FİLTRE ──────────────────────────
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                          vertical: SizeTokens.spacingMd,
                         ),
-                        SizedBox(height: SizeTokens.spacingLg),
+                        child: PeriodFilterBar(viewModel: viewModel),
+                      ),
 
-                        // ─── GİDER DAĞILIMI ──────────────────
-                        _ReportCard(
-                          title: 'Gider Dağılımı',
-                          icon: Icons.pie_chart_outline,
-                          child: _buildExpenseDistribution(viewModel),
-                        ),
-                        SizedBox(height: SizeTokens.spacingLg),
+                      // ─── TAB SEÇİCİ ────────────────────────────
+                      Padding(
+                        padding: EdgeInsets.symmetric(
+                            horizontal: SizeTokens.spacingLg),
+                        child: _TabToggle(viewModel: viewModel),
+                      ),
+                      SizedBox(height: SizeTokens.spacingMd),
 
-                        // ─── EN KARLI ARAÇLAR ─────────────────
-                        _ReportCard(
-                          title: 'En Karlı Araçlar',
-                          icon: Icons.emoji_events_outlined,
-                          child: _buildRankingList(
-                            viewModel.mostProfitableData,
-                            'vehicle',
-                            'profit',
-                            AppTheme.success,
+                      // ─── İÇERİK ────────────────────────────────
+                      Expanded(
+                        child: RefreshIndicator(
+                          color: AppTheme.accent,
+                          onRefresh: viewModel.refresh,
+                          child: SingleChildScrollView(
+                            physics:
+                                const AlwaysScrollableScrollPhysics(),
+                            padding: EdgeInsets.fromLTRB(
+                              SizeTokens.spacingLg,
+                              SizeTokens.spacingXs,
+                              SizeTokens.spacingLg,
+                              SizeTokens.spacing3xl,
+                            ),
+                            child: viewModel.selectedTab == 0
+                                ? _buildOzetTab(viewModel)
+                                : _buildAracBazliTab(viewModel),
                           ),
                         ),
-                        SizedBox(height: SizeTokens.spacingLg),
-
-                        // ─── EN ÇOK MASRAF YAPILAN ────────────
-                        _ReportCard(
-                          title: 'En Çok Masraf Yapılan',
-                          icon: Icons.money_off_outlined,
-                          child: _buildRankingList(
-                            viewModel.mostExpenseData,
-                            'vehicle',
-                            'expense',
-                            AppTheme.error,
-                          ),
-                        ),
-                        SizedBox(height: SizeTokens.spacingLg),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
-                ),
+      ),
     );
   }
 
-  Widget _buildMonthlyProfitChart(ReportsViewModel viewModel) {
-    if (viewModel.monthlyProfitData == null) return const SizedBox.shrink();
-
-    final currencyFormat = NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
-    final maxProfit = viewModel.monthlyProfitData!.fold<double>(
-      0,
-      (prev, e) => (e['profit'] as double) > prev ? (e['profit'] as double) : prev,
-    );
-
+  /// ─── ÖZET TABI ─────────────────────────────────────────
+  Widget _buildOzetTab(ReportsViewModel viewModel) {
     return Column(
-      children: viewModel.monthlyProfitData!.map((data) {
-        final profit = data['profit'] as double;
-        final ratio = maxProfit > 0 ? profit / maxProfit : 0.0;
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // KPI kartları
+        if (viewModel.summary != null) ...[
+          KpiRow(summary: viewModel.summary!),
+          SizedBox(height: SizeTokens.spacingLg),
+        ],
 
-        return Padding(
-          padding: EdgeInsets.only(bottom: SizeTokens.spacingMd),
-          child: Row(
-            children: [
-              SizedBox(
-                width: SizeTokens.spacing3xl,
-                child: Text(
-                  data['month'] as String,
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ),
-              SizedBox(width: SizeTokens.spacingSm),
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(SizeTokens.radiusSm),
-                  child: LinearProgressIndicator(
-                    value: ratio,
-                    backgroundColor: AppTheme.divider,
-                    valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.accent),
-                    minHeight: SizeTokens.spacingXxl,
-                  ),
-                ),
-              ),
-              SizedBox(width: SizeTokens.spacingSm),
-              Text(
-                currencyFormat.format(profit),
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600),
-              ),
-            ],
-          ),
-        );
-      }).toList(),
+        // Aylık kâr grafiği
+        _ReportCard(
+          title: 'Aylık Kâr Grafiği',
+          icon: Icons.bar_chart_rounded,
+          child: MonthlyProfitChart(data: viewModel.monthlyProfitData),
+        ),
+        SizedBox(height: SizeTokens.spacingLg),
+
+        // Gider dağılımı
+        _ReportCard(
+          title: 'Gider Kategori Dağılımı',
+          icon: Icons.pie_chart_outline_rounded,
+          child: ExpenseDistributionCard(
+              data: viewModel.expenseDistributionData),
+        ),
+        SizedBox(height: SizeTokens.spacingLg),
+
+        // En kârlı & en çok masraf
+        if (viewModel.summary?.mostProfitableVehicle != null ||
+            viewModel.summary?.highestExpenseVehicle != null)
+          _buildHighlights(viewModel),
+      ],
     );
   }
 
-  Widget _buildExpenseDistribution(ReportsViewModel viewModel) {
-    if (viewModel.expenseDistributionData == null) return const SizedBox.shrink();
-
-    final currencyFormat = NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
-    final colors = [
-      AppTheme.accent,
-      AppTheme.success,
-      AppTheme.warning,
-      AppTheme.error,
-      const Color(0xFF9C27B0),
-      const Color(0xFF00BCD4),
-    ];
-
-    return Column(
-      children: viewModel.expenseDistributionData!.asMap().entries.map((entry) {
-        final data = entry.value;
-        final color = colors[entry.key % colors.length];
-
-        return Padding(
-          padding: EdgeInsets.only(bottom: SizeTokens.spacingMd),
-          child: Row(
-            children: [
-              Container(
-                width: SizeTokens.spacingMd,
-                height: SizeTokens.spacingMd,
-                decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(SizeTokens.radiusSm),
-                ),
-              ),
-              SizedBox(width: SizeTokens.spacingSm),
-              Expanded(
-                child: Text(
-                  data['type'] as String,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
-              ),
-              Text(
-                currencyFormat.format(data['amount'] as double),
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(fontWeight: FontWeight.w600),
-              ),
-            ],
+  Widget _buildHighlights(ReportsViewModel viewModel) {
+    return Row(
+      children: [
+        if (viewModel.summary?.mostProfitableVehicle != null)
+          Expanded(
+            child: _HighlightCard(
+              label: 'En Kârlı Araç',
+              value: viewModel.summary!.mostProfitableVehicle!,
+              icon: Icons.emoji_events_outlined,
+              color: AppTheme.success,
+            ),
           ),
-        );
-      }).toList(),
+        if (viewModel.summary?.mostProfitableVehicle != null &&
+            viewModel.summary?.highestExpenseVehicle != null)
+          SizedBox(width: SizeTokens.spacingMd),
+        if (viewModel.summary?.highestExpenseVehicle != null)
+          Expanded(
+            child: _HighlightCard(
+              label: 'En Yüksek Gider',
+              value: viewModel.summary!.highestExpenseVehicle!,
+              icon: Icons.money_off_outlined,
+              color: AppTheme.warning,
+            ),
+          ),
+      ],
     );
   }
 
-  Widget _buildRankingList(
-    List<Map<String, dynamic>>? data,
-    String nameKey,
-    String valueKey,
-    Color valueColor,
-  ) {
-    if (data == null) return const SizedBox.shrink();
-
-    final currencyFormat = NumberFormat.currency(locale: 'tr_TR', symbol: '₺', decimalDigits: 0);
-
+  /// ─── ARAÇ BAZLI TABI ───────────────────────────────────
+  Widget _buildAracBazliTab(ReportsViewModel viewModel) {
     return Column(
-      children: data.asMap().entries.map((entry) {
-        final item = entry.value;
-        return Padding(
-          padding: EdgeInsets.only(bottom: SizeTokens.spacingMd),
-          child: Row(
-            children: [
-              Container(
-                width: SizeTokens.spacingXxl,
-                height: SizeTokens.spacingXxl,
-                decoration: BoxDecoration(
-                  color: valueColor.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(SizeTokens.radiusMd),
-                ),
-                child: Center(
-                  child: Text(
-                    '#${entry.key + 1}',
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: valueColor,
-                          fontWeight: FontWeight.w700,
-                        ),
-                  ),
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Başlık satırı
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                '${viewModel.vehicleProfits.length} Araç',
+                style: TextStyle(
+                  fontSize: SizeTokens.fontSm,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textPrimary,
                 ),
               ),
-              SizedBox(width: SizeTokens.spacingMd),
-              Expanded(
-                child: Text(
-                  item[nameKey] as String,
-                  style: Theme.of(context).textTheme.titleSmall,
-                ),
+            ),
+            if (viewModel.summary != null) ...[
+              _StatusCount(
+                label: 'Satıldı',
+                count: viewModel.summary!.soldVehicles ?? 0,
+                color: AppTheme.statusSatildi,
               ),
-              Text(
-                currencyFormat.format(item[valueKey] as double),
-                style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: valueColor,
-                      fontWeight: FontWeight.w700,
-                    ),
+              SizedBox(width: SizeTokens.spacingSm),
+              _StatusCount(
+                label: 'Stokta',
+                count: viewModel.summary!.stockVehicles ?? 0,
+                color: AppTheme.statusStokta,
               ),
             ],
-          ),
-        );
-      }).toList(),
+          ],
+        ),
+        SizedBox(height: SizeTokens.spacingMd),
+
+        VehicleProfitList(vehicles: viewModel.vehicleProfits),
+      ],
     );
   }
 
   Widget _buildError(ReportsViewModel viewModel) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+      child: Padding(
+        padding: EdgeInsets.all(SizeTokens.spacing3xl),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline,
+                size: SizeTokens.spacing5xl, color: AppTheme.error),
+            SizedBox(height: SizeTokens.spacingLg),
+            Text(
+              viewModel.errorMessage!,
+              style: Theme.of(context).textTheme.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
+            SizedBox(height: SizeTokens.spacingLg),
+            ElevatedButton(
+              onPressed: viewModel.onRetry,
+              child: const Text('Tekrar Dene'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────
+// YARDIMCI WİDGETLER
+// ─────────────────────────────────────────────────────
+
+class _TabToggle extends StatelessWidget {
+  final ReportsViewModel viewModel;
+
+  const _TabToggle({required this.viewModel});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(SizeTokens.spacingXxs),
+      decoration: BoxDecoration(
+        color: AppTheme.divider,
+        borderRadius: BorderRadius.circular(SizeTokens.radiusLg),
+      ),
+      child: Row(
         children: [
-          Icon(Icons.error_outline, size: SizeTokens.spacing5xl, color: AppTheme.error),
-          SizedBox(height: SizeTokens.spacingLg),
-          Text(viewModel.errorMessage!, style: Theme.of(context).textTheme.bodyMedium),
-          SizedBox(height: SizeTokens.spacingLg),
-          ElevatedButton(onPressed: viewModel.onRetry, child: const Text('Tekrar Dene')),
+          Expanded(
+            child: _TabButton(
+              label: 'Özet',
+              icon: Icons.dashboard_outlined,
+              isSelected: viewModel.selectedTab == 0,
+              onTap: () => viewModel.setTab(0),
+            ),
+          ),
+          Expanded(
+            child: _TabButton(
+              label: 'Araç Bazlı',
+              icon: Icons.directions_car_outlined,
+              isSelected: viewModel.selectedTab == 1,
+              onTap: () => viewModel.setTab(1),
+            ),
+          ),
         ],
+      ),
+    );
+  }
+}
+
+class _TabButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  const _TabButton({
+    required this.label,
+    required this.icon,
+    required this.isSelected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: EdgeInsets.symmetric(vertical: SizeTokens.spacingSm),
+        decoration: BoxDecoration(
+          color: isSelected ? AppTheme.surface : Colors.transparent,
+          borderRadius: BorderRadius.circular(SizeTokens.radiusMd),
+          boxShadow: isSelected ? AppTheme.cardShadow : null,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: SizeTokens.iconXs,
+              color: isSelected
+                  ? AppTheme.textPrimary
+                  : AppTheme.textTertiary,
+            ),
+            SizedBox(width: SizeTokens.spacingXs),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: SizeTokens.fontXs,
+                fontWeight:
+                    isSelected ? FontWeight.w600 : FontWeight.w400,
+                color: isSelected
+                    ? AppTheme.textPrimary
+                    : AppTheme.textTertiary,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -278,7 +371,11 @@ class _ReportCard extends StatelessWidget {
   final IconData icon;
   final Widget child;
 
-  const _ReportCard({required this.title, required this.icon, required this.child});
+  const _ReportCard({
+    required this.title,
+    required this.icon,
+    required this.child,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -287,7 +384,8 @@ class _ReportCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppTheme.surface,
         borderRadius: BorderRadius.circular(SizeTokens.radiusLg),
-        border: Border.all(color: AppTheme.border, width: SizeTokens.borderThin),
+        border: Border.all(
+            color: AppTheme.border, width: SizeTokens.borderThin),
         boxShadow: AppTheme.cardShadow,
       ),
       child: Column(
@@ -295,14 +393,121 @@ class _ReportCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, size: SizeTokens.iconSm, color: AppTheme.accent),
+              Container(
+                padding: EdgeInsets.all(SizeTokens.spacingXs),
+                decoration: BoxDecoration(
+                  color: AppTheme.accent.withValues(alpha: 0.12),
+                  borderRadius:
+                      BorderRadius.circular(SizeTokens.radiusSm),
+                ),
+                child: Icon(icon,
+                    size: SizeTokens.iconXs, color: AppTheme.primary),
+              ),
               SizedBox(width: SizeTokens.spacingSm),
-              Text(title, style: Theme.of(context).textTheme.titleSmall),
+              Text(
+                title,
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
             ],
           ),
           SizedBox(height: SizeTokens.spacingLg),
           child,
         ],
+      ),
+    );
+  }
+}
+
+class _HighlightCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color color;
+
+  const _HighlightCard({
+    required this.label,
+    required this.value,
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.all(SizeTokens.spacingMd),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(SizeTokens.radiusMd),
+        border: Border.all(
+          color: color.withValues(alpha: 0.2),
+          width: SizeTokens.borderThin,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: SizeTokens.iconSm, color: color),
+          SizedBox(width: SizeTokens.spacingSm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: SizeTokens.fontXxs,
+                    color: AppTheme.textTertiary,
+                  ),
+                ),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: SizeTokens.fontXs,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimary,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatusCount extends StatelessWidget {
+  final String label;
+  final int count;
+  final Color color;
+
+  const _StatusCount({
+    required this.label,
+    required this.count,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: SizeTokens.spacingSm,
+        vertical: SizeTokens.spacingXxs,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(SizeTokens.radiusFull),
+      ),
+      child: Text(
+        '$count $label',
+        style: TextStyle(
+          fontSize: SizeTokens.fontXxs,
+          fontWeight: FontWeight.w600,
+          color: color,
+        ),
       ),
     );
   }
