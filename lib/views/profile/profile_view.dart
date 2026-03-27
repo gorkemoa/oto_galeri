@@ -28,207 +28,361 @@ class _ProfileViewState extends State<ProfileView> {
     return Scaffold(
       backgroundColor: AppTheme.background,
       appBar: AppBar(
-        centerTitle: true,
-        title: const Text(
-          'Profil',
-          style: TextStyle(
-            color: AppTheme.textOnPrimary,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
         backgroundColor: AppTheme.primary,
         foregroundColor: AppTheme.textOnPrimary,
         elevation: 0,
+        centerTitle: true,
         scrolledUnderElevation: 0,
+        automaticallyImplyLeading: false,
+        titleSpacing: SizeTokens.spacingLg,
+        title: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Profil',
+              style: TextStyle(
+                color: AppTheme.textOnPrimary,
+                fontWeight: FontWeight.w700,
+                fontSize: SizeTokens.fontMd,
+              ),
+            ),
+           
+          ],
+        ),
       ),
       body: viewModel.isLoading
-          ? const Center(child: CircularProgressIndicator(color: AppTheme.accent))
+          ? const Center(
+              child: CircularProgressIndicator(color: AppTheme.accent))
           : SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: SizeTokens.spacingLg),
+              padding: EdgeInsets.fromLTRB(
+                SizeTokens.spacingLg,
+                SizeTokens.spacingLg,
+                SizeTokens.spacingLg,
+                SizeTokens.spacing5xl,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(height: SizeTokens.spacingXxl),
+                  // ─── KİMLİK KARTI ────────────────────────
+                  _IdentityCard(viewModel: viewModel),
+                  SizedBox(height: SizeTokens.spacingXl),
 
-                  // ─── KULLANICI KARTI ──────────────────
-                  _buildUserCard(viewModel),
-                  SizedBox(height: SizeTokens.spacingXxl),
-
-                  // ─── AYARLAR LİSTESİ ─────────────────
-                  _buildSection('Galeri Bilgileri', [
-                    _SettingsItem(
+                  // ─── GALERİ BİLGİLERİ ────────────────────
+                  _SectionLabel(label: 'GALERİ BİLGİLERİ'),
+                  SizedBox(height: SizeTokens.spacingXs),
+                  _InfoCard(items: [
+                    _InfoRow(
                       icon: Icons.store_outlined,
-                      title: 'Galeri Adı',
-                      subtitle: viewModel.galleryName ?? '-',
+                      label: 'Galeri Adı',
+                      value: viewModel.galleryName ?? '—',
                     ),
-                    _SettingsItem(
+                    _InfoRow(
                       icon: Icons.phone_outlined,
-                      title: 'Telefon',
-                      subtitle: viewModel.phone ?? '-',
+                      label: 'Telefon',
+                      value: viewModel.phone ?? '—',
                     ),
-                    _SettingsItem(
+                    _InfoRow(
                       icon: Icons.location_on_outlined,
-                      title: 'Adres',
-                      subtitle: viewModel.address ?? '-',
+                      label: 'Adres',
+                      value: viewModel.address ?? '—',
+                      isLast: true,
                     ),
                   ]),
-                  SizedBox(height: SizeTokens.spacingLg),
 
-                  _buildSection('Yönetim', [
-                    _SettingsItem(
+                  SizedBox(height: SizeTokens.spacingXl),
+
+                  // ─── YÖNETİM ─────────────────────────────
+                  _SectionLabel(label: 'YÖNETİM'),
+                  SizedBox(height: SizeTokens.spacingXs),
+                  _InfoCard(items: [
+                    _InfoRow(
                       icon: Icons.people_outline,
-                      title: 'Kullanıcı Yönetimi',
-                      trailing: Icon(
-                        Icons.chevron_right,
-                        size: SizeTokens.iconSm,
-                        color: AppTheme.textTertiary,
-                      ),
-                      onTap: () {
-                        // TODO: Kullanıcı yönetimi sayfasına navigate
-                      },
+                      label: 'Kullanıcı Yönetimi',
+                      trailing: Icon(Icons.chevron_right,
+                          size: SizeTokens.iconSm,
+                          color: AppTheme.textTertiary),
+                      onTap: () {},
+                      isLast: true,
                     ),
                   ]),
-                  SizedBox(height: SizeTokens.spacingXxl),
 
-                  // ─── ÇIKIŞ BUTONU ────────────────────
-                  SizedBox(
-                    width: double.infinity,
-                    child: OutlinedButton.icon(
-                      onPressed: () {
-                        // TODO: Çıkış yap flow
-                        viewModel.logout();
-                      },
-                      icon: Icon(Icons.logout, size: SizeTokens.iconSm, color: AppTheme.error),
-                      label: Text(
-                        'Çıkış Yap',
-                        style: Theme.of(context).textTheme.labelLarge?.copyWith(color: AppTheme.error),
-                      ),
-                      style: OutlinedButton.styleFrom(
-                        side: BorderSide(color: AppTheme.error.withValues(alpha: 0.3)),
-                      ),
+                  SizedBox(height: SizeTokens.spacingXl),
+
+                  // ─── UYGULAMA ────────────────────────────
+                  _SectionLabel(label: 'UYGULAMA'),
+                  SizedBox(height: SizeTokens.spacingXs),
+                  _InfoCard(items: [
+                    _InfoRow(
+                      icon: Icons.notifications_none_outlined,
+                      label: 'Bildirimler',
+                      trailing: Icon(Icons.chevron_right,
+                          size: SizeTokens.iconSm,
+                          color: AppTheme.textTertiary),
+                      onTap: () {},
                     ),
-                  ),
-                  SizedBox(height: SizeTokens.spacing3xl),
+                    _InfoRow(
+                      icon: Icons.info_outline,
+                      label: 'Sürüm',
+                      value: '1.0.0',
+                      isLast: true,
+                    ),
+                  ]),
+
+                  SizedBox(height: SizeTokens.spacingXl),
+
+                  // ─── ÇIKIŞ ───────────────────────────────
+                  _LogoutButton(onTap: () => viewModel.logout()),
                 ],
               ),
             ),
     );
   }
+}
 
-  Widget _buildUserCard(ProfileViewModel viewModel) {
+// ─────────────────────────────────────────────────────
+// YARDIMCI WİDGETLER
+// ─────────────────────────────────────────────────────
+
+class _IdentityCard extends StatelessWidget {
+  final ProfileViewModel viewModel;
+  const _IdentityCard({required this.viewModel});
+
+  String _initials(String? name) {
+    if (name == null || name.isEmpty) return '?';
+    final words = name.trim().split(RegExp(r'\s+'));
+    if (words.length == 1) return words[0][0].toUpperCase();
+    return '${words[0][0]}${words[1][0]}'.toUpperCase();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(SizeTokens.spacingXxl),
       decoration: BoxDecoration(
         color: AppTheme.surface,
         borderRadius: BorderRadius.circular(SizeTokens.radiusLg),
         border: Border.all(color: AppTheme.border, width: SizeTokens.borderThin),
         boxShadow: AppTheme.cardShadow,
       ),
+      padding: EdgeInsets.all(SizeTokens.spacingLg),
       child: Row(
         children: [
           Container(
             width: SizeTokens.spacing5xl,
             height: SizeTokens.spacing5xl,
             decoration: BoxDecoration(
-              color: AppTheme.accent.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(SizeTokens.radiusFull),
-            ),
-            child: Icon(
-              Icons.person,
               color: AppTheme.accent,
-              size: SizeTokens.iconLg,
+              borderRadius: BorderRadius.circular(SizeTokens.radiusMd),
+            ),
+            child: Center(
+              child: Text(
+                _initials(viewModel.galleryName),
+                style: TextStyle(
+                  color: AppTheme.primary,
+                  fontSize: SizeTokens.fontMd,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 0.5,
+                ),
+              ),
             ),
           ),
           SizedBox(width: SizeTokens.spacingLg),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                viewModel.userName ?? '-',
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-              SizedBox(height: SizeTokens.spacingXxs),
-              Text(
-                viewModel.galleryName ?? '-',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppTheme.accent,
-                    ),
-              ),
-            ],
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  viewModel.galleryName ?? '—',
+                  style: TextStyle(
+                    fontSize: SizeTokens.fontSm,
+                    fontWeight: FontWeight.w700,
+                    color: AppTheme.textPrimary,
+                  ),
+                ),
+                SizedBox(height: SizeTokens.spacingXxs),
+                Text(
+                  viewModel.userName ?? '—',
+                  style: TextStyle(
+                    fontSize: SizeTokens.fontXs,
+                    color: AppTheme.textSecondary,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
+}
 
-  Widget _buildSection(String title, List<Widget> children) {
+class _SectionLabel extends StatelessWidget {
+  final String label;
+  const _SectionLabel({required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(left: SizeTokens.spacingXxs),
+      child: Text(
+        label,
+        style: TextStyle(
+          fontSize: SizeTokens.fontXxs,
+          fontWeight: FontWeight.w600,
+          color: AppTheme.textTertiary,
+          letterSpacing: 0.8,
+        ),
+      ),
+    );
+  }
+}
+
+class _InfoCard extends StatelessWidget {
+  final List<Widget> items;
+  const _InfoCard({required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(SizeTokens.radiusLg),
+        border:
+            Border.all(color: AppTheme.border, width: SizeTokens.borderThin),
+        boxShadow: AppTheme.cardShadow,
+      ),
+      child: Column(children: items),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String? value;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+  final bool isLast;
+
+  const _InfoRow({
+    required this.icon,
+    required this.label,
+    this.value,
+    this.trailing,
+    this.onTap,
+    this.isLast = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          title,
-          style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: AppTheme.textTertiary,
-              ),
-        ),
-        SizedBox(height: SizeTokens.spacingMd),
-        Container(
-          decoration: BoxDecoration(
-            color: AppTheme.surface,
-            borderRadius: BorderRadius.circular(SizeTokens.radiusLg),
-            border: Border.all(color: AppTheme.border, width: SizeTokens.borderThin),
+        InkWell(
+          onTap: onTap,
+          borderRadius: isLast
+              ? BorderRadius.only(
+                  bottomLeft: Radius.circular(SizeTokens.radiusLg),
+                  bottomRight: Radius.circular(SizeTokens.radiusLg),
+                )
+              : BorderRadius.zero,
+          child: Padding(
+            padding: EdgeInsets.symmetric(
+              horizontal: SizeTokens.spacingLg,
+              vertical: SizeTokens.spacingMd,
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: SizeTokens.spacingXxl,
+                  height: SizeTokens.spacingXxl,
+                  decoration: BoxDecoration(
+                    color: AppTheme.background,
+                    borderRadius: BorderRadius.circular(SizeTokens.radiusSm),
+                  ),
+                  child: Icon(icon,
+                      size: SizeTokens.iconXs, color: AppTheme.textSecondary),
+                ),
+                SizedBox(width: SizeTokens.spacingMd),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        label,
+                        style: TextStyle(
+                          fontSize: SizeTokens.fontXs,
+                          color: AppTheme.textTertiary,
+                        ),
+                      ),
+                      if (value != null) ...[
+                        SizedBox(height: SizeTokens.spacingXxs),
+                        Text(
+                          value!,
+                          style: TextStyle(
+                            fontSize: SizeTokens.fontSm,
+                            fontWeight: FontWeight.w600,
+                            color: AppTheme.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                if (trailing != null) trailing!,
+              ],
+            ),
           ),
-          child: Column(
-            children: children,
-          ),
         ),
+        if (!isLast)
+          Divider(
+            height: SizeTokens.borderThin,
+            indent: SizeTokens.spacingLg +
+                SizeTokens.spacingXxl +
+                SizeTokens.spacingMd,
+            endIndent: 0,
+            color: AppTheme.divider,
+          ),
       ],
     );
   }
 }
 
-class _SettingsItem extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final String? subtitle;
-  final Widget? trailing;
-  final VoidCallback? onTap;
-
-  const _SettingsItem({
-    required this.icon,
-    required this.title,
-    this.subtitle,
-    this.trailing,
-    this.onTap,
-  });
+class _LogoutButton extends StatelessWidget {
+  final VoidCallback onTap;
+  const _LogoutButton({required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return GestureDetector(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(SizeTokens.radiusLg),
-      child: Padding(
-        padding: EdgeInsets.all(SizeTokens.spacingLg),
+      child: Container(
+        width: double.infinity,
+        padding: EdgeInsets.symmetric(vertical: SizeTokens.spacingMd),
+        decoration: BoxDecoration(
+          color: AppTheme.error.withValues(alpha: 0.06),
+          borderRadius: BorderRadius.circular(SizeTokens.radiusLg),
+          border: Border.all(
+              color: AppTheme.error.withValues(alpha: 0.2),
+              width: SizeTokens.borderThin),
+        ),
         child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: SizeTokens.iconSm, color: AppTheme.textSecondary),
-            SizedBox(width: SizeTokens.spacingMd),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: Theme.of(context).textTheme.titleSmall),
-                  if (subtitle != null) ...[
-                    SizedBox(height: SizeTokens.spacingXxs),
-                    Text(subtitle!, style: Theme.of(context).textTheme.bodySmall),
-                  ],
-                ],
+            Icon(Icons.logout_outlined,
+                size: SizeTokens.iconSm, color: AppTheme.error),
+            SizedBox(width: SizeTokens.spacingSm),
+            Text(
+              'Çıkış Yap',
+              style: TextStyle(
+                fontSize: SizeTokens.fontSm,
+                fontWeight: FontWeight.w600,
+                color: AppTheme.error,
               ),
             ),
-            if (trailing != null) trailing!,
           ],
         ),
       ),
     );
   }
 }
+
+

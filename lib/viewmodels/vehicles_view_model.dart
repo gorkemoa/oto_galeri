@@ -120,4 +120,9 @@ class VehiclesViewModel extends ChangeNotifier {
     selectedStatus = null;
     init();
   }
+
+  // ─── HESAPLANAN ───────────────────────────────────────
+  int get vehicleCount => vehicles?.length ?? 0;
+  int get stockCount => vehicles?.where((v) => v.status == 'STOKTA').length ?? 0;
+  int get soldCount => vehicles?.where((v) => v.status == 'SATILDI').length ?? 0;
 }

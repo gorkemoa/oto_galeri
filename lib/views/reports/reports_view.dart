@@ -5,7 +5,7 @@ import 'package:oto_galeri/viewmodels/reports_view_model.dart';
 import 'package:oto_galeri/views/reports/widgets/expense_distribution_card.dart';
 import 'package:oto_galeri/views/reports/widgets/kpi_row.dart';
 import 'package:oto_galeri/views/reports/widgets/monthly_profit_chart.dart';
-import 'package:oto_galeri/views/reports/widgets/period_filter_bar.dart';
+
 import 'package:oto_galeri/views/reports/widgets/vehicle_profit_list.dart';
 import 'package:provider/provider.dart';
 
@@ -26,29 +26,6 @@ class _ReportsViewState extends State<ReportsView> {
     });
   }
 
-  Future<void> _onExportCsv() async {
-    final viewModel = context.read<ReportsViewModel>();
-    await viewModel.exportCsv();
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(Icons.check_circle_outline,
-                size: SizeTokens.iconSm,
-                color: AppTheme.textOnPrimary),
-            SizedBox(width: SizeTokens.spacingSm),
-            const Expanded(
-                child: Text('CSV panoya kopyalandı. Yapıştırıp kullanabilirsiniz.')),
-          ],
-        ),
-        backgroundColor: AppTheme.success,
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 3),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final viewModel = context.watch<ReportsViewModel>();
@@ -65,46 +42,78 @@ class _ReportsViewState extends State<ReportsView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Rapoarlar',
+              'Raporlar',
               style: TextStyle(
                 color: AppTheme.textOnPrimary,
                 fontWeight: FontWeight.w700,
                 fontSize: SizeTokens.fontMd,
               ),
             ),
-           
+            Text(
+              viewModel.selectedPeriod,
+              style: TextStyle(
+                color: AppTheme.textOnPrimary.withValues(alpha: 0.7),
+                fontSize: SizeTokens.fontXs,
+                fontWeight: FontWeight.w400,
+              ),
+            ),
           ],
         ),
         actions: [
-          if (!viewModel.isLoading && viewModel.vehicleProfits.isNotEmpty)
-            IconButton(
-              tooltip: 'CSV olarak kopyala',
-              onPressed: _onExportCsv,
-              icon: Icon(
-                Icons.download_outlined,
-                size: SizeTokens.iconSm,
-                color: AppTheme.textOnPrimary,
-              ),
+          PopupMenuButton<String>(
+            icon: Icon(
+              Icons.more_vert_rounded,
+              color: AppTheme.textOnPrimary,
+              size: SizeTokens.iconSm,
             ),
+            color: AppTheme.surface,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(SizeTokens.radiusMd),
+            ),
+            onSelected: (period) => viewModel.setPeriod(period),
+            itemBuilder: (_) => ReportsViewModel.periods.map((period) {
+              final isSelected = viewModel.selectedPeriod == period;
+              return PopupMenuItem<String>(
+                value: period,
+                child: Row(
+                  children: [
+                    Icon(
+                      isSelected
+                          ? Icons.radio_button_checked_rounded
+                          : Icons.radio_button_unchecked_rounded,
+                      size: SizeTokens.iconXs,
+                      color:
+                          isSelected ? AppTheme.primary : AppTheme.textTertiary,
+                    ),
+                    SizedBox(width: SizeTokens.spacingSm),
+                    Text(
+                      period,
+                      style: TextStyle(
+                        fontSize: SizeTokens.fontSm,
+                        fontWeight:
+                            isSelected ? FontWeight.w600 : FontWeight.w400,
+                        color: isSelected
+                            ? AppTheme.primary
+                            : AppTheme.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }).toList(),
+          ),
           SizedBox(width: SizeTokens.spacingXs),
         ],
       ),
       body: SafeArea(
         child: viewModel.isLoading
             ? const Center(
-                child:
-                    CircularProgressIndicator(color: AppTheme.accent))
+                child: CircularProgressIndicator(color: AppTheme.accent))
             : viewModel.errorMessage != null
                 ? _buildError(viewModel)
                 : Column(
                     children: [
-                      // ─── DÖNEM FİLTRE ──────────────────────────
-                      Padding(
-                        padding: EdgeInsets.symmetric(
-                          vertical: SizeTokens.spacingMd,
-                        ),
-                        child: PeriodFilterBar(viewModel: viewModel),
-                      ),
+                      SizedBox(height: SizeTokens.spacingMd),
 
                       // ─── TAB SEÇİCİ ────────────────────────────
                       Padding(
@@ -120,8 +129,7 @@ class _ReportsViewState extends State<ReportsView> {
                           color: AppTheme.accent,
                           onRefresh: viewModel.refresh,
                           child: SingleChildScrollView(
-                            physics:
-                                const AlwaysScrollableScrollPhysics(),
+                            physics: const AlwaysScrollableScrollPhysics(),
                             padding: EdgeInsets.fromLTRB(
                               SizeTokens.spacingLg,
                               SizeTokens.spacingXs,
@@ -163,8 +171,8 @@ class _ReportsViewState extends State<ReportsView> {
         _ReportCard(
           title: 'Gider Kategori Dağılımı',
           icon: Icons.pie_chart_outline_rounded,
-          child: ExpenseDistributionCard(
-              data: viewModel.expenseDistributionData),
+          child:
+              ExpenseDistributionCard(data: viewModel.expenseDistributionData),
         ),
         SizedBox(height: SizeTokens.spacingLg),
 
@@ -285,7 +293,7 @@ class _TabToggle extends StatelessWidget {
     return Container(
       padding: EdgeInsets.all(SizeTokens.spacingXxs),
       decoration: BoxDecoration(
-        color: AppTheme.divider,
+        color: AppTheme.primary.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(SizeTokens.radiusLg),
       ),
       child: Row(
@@ -343,20 +351,16 @@ class _TabButton extends StatelessWidget {
             Icon(
               icon,
               size: SizeTokens.iconXs,
-              color: isSelected
-                  ? AppTheme.textPrimary
-                  : AppTheme.textTertiary,
+              color: isSelected ? AppTheme.textPrimary : AppTheme.textTertiary,
             ),
             SizedBox(width: SizeTokens.spacingXs),
             Text(
               label,
               style: TextStyle(
                 fontSize: SizeTokens.fontXs,
-                fontWeight:
-                    isSelected ? FontWeight.w600 : FontWeight.w400,
-                color: isSelected
-                    ? AppTheme.textPrimary
-                    : AppTheme.textTertiary,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                color:
+                    isSelected ? AppTheme.textPrimary : AppTheme.textTertiary,
               ),
             ),
           ],
@@ -384,8 +388,8 @@ class _ReportCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppTheme.surface,
         borderRadius: BorderRadius.circular(SizeTokens.radiusLg),
-        border: Border.all(
-            color: AppTheme.border, width: SizeTokens.borderThin),
+        border:
+            Border.all(color: AppTheme.border, width: SizeTokens.borderThin),
         boxShadow: AppTheme.cardShadow,
       ),
       child: Column(
@@ -397,8 +401,7 @@ class _ReportCard extends StatelessWidget {
                 padding: EdgeInsets.all(SizeTokens.spacingXs),
                 decoration: BoxDecoration(
                   color: AppTheme.accent.withValues(alpha: 0.12),
-                  borderRadius:
-                      BorderRadius.circular(SizeTokens.radiusSm),
+                  borderRadius: BorderRadius.circular(SizeTokens.radiusSm),
                 ),
                 child: Icon(icon,
                     size: SizeTokens.iconXs, color: AppTheme.primary),

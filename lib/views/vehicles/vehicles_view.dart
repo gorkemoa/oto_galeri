@@ -18,12 +18,28 @@ class VehiclesView extends StatefulWidget {
 }
 
 class _VehiclesViewState extends State<VehiclesView> {
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocus = FocusNode();
+  bool _searchExpanded = false;
+
   @override
   void initState() {
     super.initState();
+    _searchFocus.addListener(() {
+      if (_searchFocus.hasFocus && !_searchExpanded) {
+        setState(() => _searchExpanded = true);
+      }
+    });
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<VehiclesViewModel>().init();
     });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _searchFocus.dispose();
+    super.dispose();
   }
 
   @override
@@ -32,23 +48,6 @@ class _VehiclesViewState extends State<VehiclesView> {
 
     return Scaffold(
       backgroundColor: AppTheme.background,
-      appBar: AppBar(
-        centerTitle: true,
-        title: const Text(
-          'Araçlar',
-          style: TextStyle(
-            color: AppTheme.textOnPrimary,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        backgroundColor: AppTheme.primary,
-        foregroundColor: AppTheme.textOnPrimary,
-        elevation: 0,
-        scrolledUnderElevation: 0,
-        actions: [
-          _buildFilterIcon(context, viewModel),
-        ],
-      ),
       floatingActionButton: FloatingActionButton(
         heroTag: 'add_vehicle_fab',
         onPressed: () => _openAddVehicle(context, viewModel),
@@ -57,16 +56,57 @@ class _VehiclesViewState extends State<VehiclesView> {
         elevation: 3,
         child: Icon(Icons.add, size: SizeTokens.iconMd),
       ),
-      body: SafeArea(
-        child: RefreshIndicator(
-          color: AppTheme.primary,
-          onRefresh: viewModel.refresh,
-          child: CustomScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            slivers: [
-              // ─── ARAMA & FİLTRE CHIPS (SCROLLABLE) ──────
-              SliverToBoxAdapter(child: _buildHeader(context, viewModel)),
-              // ─── İÇERİK ─────────────────────────────────
+      body: RefreshIndicator(
+        color: AppTheme.primary,
+        onRefresh: viewModel.refresh,
+        child: CustomScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          slivers: [
+            // ─── SLİVER APP BAR (başlık + arama + chip'ler) ──
+            SliverAppBar(
+              pinned: true,
+              floating: false,
+              backgroundColor: AppTheme.primary,
+              foregroundColor: AppTheme.textOnPrimary,
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              automaticallyImplyLeading: false,
+              toolbarHeight: kToolbarHeight,
+              title: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Araçlar',
+                    style: TextStyle(
+                      color: AppTheme.textOnPrimary,
+                      fontWeight: FontWeight.w700,
+                      fontSize: SizeTokens.fontMd,
+                    ),
+                  ),
+                  if (viewModel.vehicles != null)
+                    Text(
+                      '${viewModel.vehicleCount} araç · ${viewModel.stockCount} stokta',
+                      style: TextStyle(
+                        color: AppTheme.textOnPrimary.withValues(alpha: 0.6),
+                        fontSize: SizeTokens.fontXxs,
+                      ),
+                    ),
+                ],
+              ),
+              actions: [
+                _buildFilterIcon(context, viewModel),
+                SizedBox(width: SizeTokens.spacingXs),
+              ],
+              bottom: PreferredSize(
+                preferredSize: Size.fromHeight(
+                  SizeTokens.inputHeight +
+                      SizeTokens.spacingXs +
+                      SizeTokens.spacing3xl,
+                ),
+                child: _buildHeader(context, viewModel),
+              ),
+            ),
+            // ─── İÇERİK ─────────────────────────────────
               if (viewModel.isLoading)
                 const SliverFillRemaining(
                   child: Center(
@@ -84,7 +124,7 @@ class _VehiclesViewState extends State<VehiclesView> {
                     SizeTokens.spacingLg,
                     SizeTokens.spacingLg,
                     SizeTokens.spacingLg,
-                    SizeTokens.spacing5xl,
+                    1,
                   ),
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate(
@@ -98,32 +138,148 @@ class _VehiclesViewState extends State<VehiclesView> {
             ],
           ),
         ),
-      ),
     );
   }
 
   Widget _buildHeader(BuildContext context, VehiclesViewModel viewModel) {
+    final showCount = viewModel.vehicles != null;
     return Container(
-      color: AppTheme.surface,
+      color: AppTheme.primary,
       padding: EdgeInsets.fromLTRB(
         SizeTokens.spacingLg,
-        SizeTokens.spacingMd,
+        SizeTokens.spacingXs,
         SizeTokens.spacingLg,
         SizeTokens.spacingMd,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          TextField(
-            onChanged: viewModel.setSearchQuery,
-            decoration: InputDecoration(
-              hintText: 'Araç ara...',
-              prefixIcon: Icon(Icons.search, size: SizeTokens.iconSm),
-            ),
+          // ─── ARAMA + SAYAÇ SATIRI ────────────────────
+          SizedBox(
+            height: SizeTokens.inputHeight,
+            child: !showCount
+                ? _buildSearchField(viewModel)
+                : Row(
+                    children: [
+                      AnimatedSize(
+                        duration: const Duration(milliseconds: 220),
+                        curve: Curves.easeOutCubic,
+                        child: SizedBox(
+                          width: _searchExpanded
+                              ? MediaQuery.of(context).size.width * 0.68
+                              : MediaQuery.of(context).size.width * 0.47,
+                          child: _buildSearchField(viewModel),
+                        ),
+                      ),
+                      SizedBox(width: SizeTokens.spacingSm),
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            _searchFocus.unfocus();
+                            setState(() => _searchExpanded = false);
+                          },
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 220),
+                            curve: Curves.easeOutCubic,
+                            height: double.infinity,
+                            padding: EdgeInsets.symmetric(
+                              horizontal: SizeTokens.spacingSm,
+                              vertical: SizeTokens.spacingXs,
+                            ),
+                            decoration: BoxDecoration(
+                              color: _searchExpanded
+                                  ? AppTheme.textOnPrimary.withValues(alpha: 0.07)
+                                  : AppTheme.textOnPrimary.withValues(alpha: 0.14),
+                              borderRadius:
+                                  BorderRadius.circular(SizeTokens.radiusMd),
+                            ),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    '${viewModel.stockCount} Stokta',
+                                    style: TextStyle(
+                                      color: AppTheme.accent,
+                                      fontSize: SizeTokens.fontSm,
+                                      fontWeight: FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                                if (!_searchExpanded)
+                                  Text(
+                                    '${viewModel.soldCount} satıldı',
+                                    style: TextStyle(
+                                      color: AppTheme.textOnPrimary
+                                          .withValues(alpha: 0.5),
+                                      fontSize: SizeTokens.fontXxs,
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
           ),
           SizedBox(height: SizeTokens.spacingMd),
+          // ─── DURUM FİLTRE CHİPLERİ ──────────────────
           _buildFilterChips(viewModel),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSearchField(VehiclesViewModel viewModel) {
+    return TextField(
+      controller: _searchController,
+      focusNode: _searchFocus,
+      onChanged: (q) {
+        viewModel.setSearchQuery(q);
+        setState(() => _searchExpanded = true);
+      },
+      onTap: () => setState(() => _searchExpanded = true),
+      style: TextStyle(
+          color: AppTheme.textOnPrimary, fontSize: SizeTokens.fontXs),
+      decoration: InputDecoration(
+        filled: true,
+        fillColor: AppTheme.textOnPrimary.withValues(alpha: 0.12),
+        hintText: _searchExpanded ? 'Araç ara...' : 'Ara...',
+        hintStyle: TextStyle(
+            color: AppTheme.textOnPrimary.withValues(alpha: 0.45),
+            fontSize: SizeTokens.fontXs),
+        prefixIcon: Icon(Icons.search,
+            size: SizeTokens.iconXs,
+            color: AppTheme.textOnPrimary.withValues(alpha: 0.7)),
+        suffixIcon: _searchController.text.isNotEmpty
+            ? GestureDetector(
+                onTap: () {
+                  _searchController.clear();
+                  viewModel.setSearchQuery('');
+                  _searchFocus.unfocus();
+                  setState(() => _searchExpanded = false);
+                },
+                child: Icon(Icons.close,
+                    size: SizeTokens.iconXs,
+                    color: AppTheme.textOnPrimary.withValues(alpha: 0.6)),
+              )
+            : null,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(SizeTokens.radiusMd),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(SizeTokens.radiusMd),
+          borderSide: BorderSide(
+              color: AppTheme.textOnPrimary.withValues(alpha: 0.3)),
+        ),
+        contentPadding:
+            EdgeInsets.symmetric(vertical: SizeTokens.spacingXs),
+        isDense: true,
       ),
     );
   }
@@ -138,13 +294,13 @@ class _VehiclesViewState extends State<VehiclesView> {
             isSelected: viewModel.selectedStatus == null,
             onTap: () => viewModel.setStatusFilter(null),
           ),
-          SizedBox(width: SizeTokens.spacingSm),
+          SizedBox(width: SizeTokens.spacingXs),
           _FilterChip(
             label: 'Stokta',
             isSelected: viewModel.selectedStatus == 'STOKTA',
             onTap: () => viewModel.setStatusFilter('STOKTA'),
           ),
-          SizedBox(width: SizeTokens.spacingSm),
+          SizedBox(width: SizeTokens.spacingXs),
           _FilterChip(
             label: 'Satıldı',
             isSelected: viewModel.selectedStatus == 'SATILDI',
@@ -246,27 +402,28 @@ class _FilterChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return GestureDetector(
       onTap: onTap,
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 120),
+        curve: Curves.easeOutCubic,
         padding: EdgeInsets.symmetric(
-          horizontal: SizeTokens.spacingLg,
-          vertical: SizeTokens.spacingSm,
+          horizontal: SizeTokens.spacingMd,
+          vertical: SizeTokens.spacingXs,
         ),
         decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primary : AppTheme.surface,
+          color: isSelected
+              ? AppTheme.textOnPrimary
+              : AppTheme.textOnPrimary.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(SizeTokens.radiusFull),
-          border: Border.all(
-            color: isSelected ? AppTheme.primary : AppTheme.border,
-            width: SizeTokens.borderThin,
-          ),
         ),
         child: Text(
           label,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: isSelected ? AppTheme.textOnPrimary : AppTheme.primary,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-              ),
+          style: TextStyle(
+            fontSize: SizeTokens.fontXs,
+            color: isSelected ? AppTheme.primary : AppTheme.textOnPrimary,
+            fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+          ),
         ),
       ),
     );
@@ -294,7 +451,7 @@ class _VehicleCard extends StatelessWidget {
     return GestureDetector(
       onTap: () => _openDetail(context),
       child: Container(
-        margin: EdgeInsets.only(bottom: SizeTokens.spacingMd),
+        margin: EdgeInsets.only(bottom: SizeTokens.spacingSm),
         decoration: BoxDecoration(
           color: AppTheme.surface,
           borderRadius: BorderRadius.circular(SizeTokens.radiusLg),
@@ -314,7 +471,7 @@ class _VehicleCard extends StatelessWidget {
               children: [
                 // ── Sol: Araç Görseli ──────────────────
                 SizedBox(
-                  width: SizeTokens.spacing5xl * 2,
+                  width: SizeTokens.spacing5xl * 2.2,
                   child: Stack(
                     fit: StackFit.passthrough,
                     children: [
@@ -334,37 +491,105 @@ class _VehicleCard extends StatelessWidget {
                           ),
                         ),
                       ),
-                      if (vehicle.isSold) const _SoldStamp(),
+                      // Alt gradient
+                      Positioned(
+                        bottom: 0, left: 0, right: 0,
+                        height: SizeTokens.spacing3xl,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              begin: Alignment.topCenter,
+                              end: Alignment.bottomCenter,
+                              colors: [
+                                Colors.transparent,
+                                Colors.black.withValues(alpha: 0.35),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      // SATILDI diyagonal şerit
+                      if (vehicle.isSold)
+                        Positioned(
+                          top: SizeTokens.spacing5xl,
+                          right: -SizeTokens.spacingXl,
+                          child: Transform.rotate(
+                            angle: -0.576,
+                            alignment: Alignment.center,
+                            child: Container(
+                              width: SizeTokens.spacing5xl +
+                                  SizeTokens.spacing4xl,
+                              alignment: Alignment.center,
+                              padding: EdgeInsets.symmetric(
+                                  vertical: SizeTokens.spacingXs),
+                              decoration: BoxDecoration(
+                                color: AppTheme.statusSatildi,
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppTheme.statusSatildi
+                                        .withValues(alpha: 0.65),
+                                    blurRadius: SizeTokens.spacingMd,
+                                    spreadRadius: SizeTokens.borderThick,
+                                  ),
+                                ],
+                              ),
+                              child: Text(
+                                'SATILDI',
+                                style: TextStyle(
+                                  color: AppTheme.surface,
+                                  fontSize: SizeTokens.fontXxs,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 1.8,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 ),
                 // ── Sağ: Bilgiler ──────────────────────
                 Expanded(
                   child: Padding(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: SizeTokens.spacingMd,
-                      vertical: SizeTokens.spacingXs,
+                    padding: EdgeInsets.fromLTRB(
+                      SizeTokens.spacingMd,
+                      SizeTokens.spacingSm,
+                      SizeTokens.spacingMd,
+                      SizeTokens.spacingSm,
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        // Araç adı
-                        Text(
-                          vehicle.fullName,
-                          style: Theme.of(context).textTheme.titleSmall,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        // Başlık
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                vehicle.fullName,
+                                style: TextStyle(
+                                  fontSize: SizeTokens.fontSm,
+                                  fontWeight: FontWeight.w700,
+                                  color: AppTheme.textPrimary,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         ),
-                        SizedBox(height: SizeTokens.spacingXs),
-                        // Yıl + KM + Yakıt
+                        SizedBox(height: SizeTokens.spacingXxs),
+                        // Yıl · KM · Yakıt
                         Text(
                           [
                             if (vehicle.year != null) '${vehicle.year}',
-                            '${kmFormat.format(vehicle.kilometer ?? 0)} KM',
+                            '${kmFormat.format(vehicle.kilometer ?? 0)} km',
                             if (vehicle.fuelType != null) vehicle.fuelType!,
-                          ].join(' · '),
-                          style: Theme.of(context).textTheme.bodySmall,
+                          ].join('  ·  '),
+                          style: TextStyle(
+                            fontSize: SizeTokens.fontXs,
+                            color: AppTheme.textSecondary,
+                          ),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -378,13 +603,13 @@ class _VehicleCard extends StatelessWidget {
                                   .format(vehicle.purchasePrice ?? 0),
                               valueColor: AppTheme.textPrimary,
                             ),
-                            SizedBox(width: SizeTokens.spacingSm),
+                            SizedBox(width: SizeTokens.spacingMd),
                             _PriceChip(
                               label: 'Masraf',
                               value: currencyFormat
                                   .format(vehicle.totalExpense ?? 0),
                               valueColor: (vehicle.totalExpense ?? 0) > 0
-                                  ? AppTheme.error
+                                  ? AppTheme.warning
                                   : AppTheme.textTertiary,
                             ),
                           ],
@@ -432,55 +657,6 @@ class _PriceChip extends StatelessWidget {
               ),
         ),
       ],
-    );
-  }
-}
-
-/// Görselin sağ alt köşesinde çapraz "SATILDI" damgası
-/// Positioned ile doğrudan sağ-alt köşeye sabitlenir; strip merkezi köşe noktasında.
-class _SoldStamp extends StatelessWidget {
-  const _SoldStamp();
-
-  @override
-  Widget build(BuildContext context) {
-    return Positioned(
-      top: 45,
-      right: -SizeTokens.spacingXl,
-      child: Transform.rotate(
-        angle: -0.576, // ~-33° saat yönünde
-        alignment: Alignment.center,
-        child: Container(
-          width: SizeTokens.spacing5xl + SizeTokens.spacing4xl,
-          alignment: Alignment.center,
-          padding: EdgeInsets.symmetric(vertical: SizeTokens.spacingXs),
-          decoration: BoxDecoration(
-            color: AppTheme.statusSatildi,
-            boxShadow: [
-              BoxShadow(
-                color: AppTheme.statusSatildi.withValues(alpha: 0.65),
-                blurRadius: SizeTokens.spacingMd,
-                spreadRadius: SizeTokens.borderThick,
-              ),
-            ],
-          ),
-          child: Text(
-            'SATILDI',
-            style: TextStyle(
-              color: AppTheme.surface,
-              fontSize: SizeTokens.fontXxs,
-              fontWeight: FontWeight.w900,
-              letterSpacing: 1.8,
-              shadows: [
-                Shadow(
-                  color: Colors.black38,
-                  blurRadius: SizeTokens.spacingXs,
-                  offset: Offset(0, SizeTokens.borderThin),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 }
